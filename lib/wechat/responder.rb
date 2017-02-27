@@ -210,7 +210,8 @@ module Wechat
 
       render plain: 'Forbidden', status: 403 if signature != Signature.hexdigest(self.class.token,
                                                                                  params[:timestamp],
-                                                                                 params[:nonce])
+                                                                                 params[:nonce],
+                                                                                 nil)
     end
 
     def post_xml
