@@ -14,7 +14,8 @@ module Wechat
       def token
         # Possible two worker running, one worker refresh token, other unaware, so must read every time
         read_token_from_store
-        refresh if remain_life_seconds < @random_generator.rand(30..3 * 60)
+        refresh
+        # if remain_life_seconds < @random_generator.rand(30..3 * 60)
         access_token
       end
 
@@ -22,7 +23,7 @@ module Wechat
 
       def read_token_from_store
         td = read_token
-        p td
+        p "token_josn: #{td}"
         @token_life_in_seconds = td.fetch('token_expires_in').to_i
         @got_token_at = td.fetch('got_token_at').to_i
         @access_token = td.fetch('access_token') # return access_token same time
