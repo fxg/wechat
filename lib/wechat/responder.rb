@@ -206,8 +206,6 @@ module Wechat
         signature = params[:signature]
       end
 
-      # msg_encrypt = nil unless self.class.corpid.present?
-
       render plain: 'Forbidden', status: 403 if signature != Signature.hexdigest(self.class.token,
                                                                                  params[:timestamp],
                                                                                  params[:nonce],
