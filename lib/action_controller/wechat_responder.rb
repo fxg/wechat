@@ -34,7 +34,6 @@ module ActionController
 
       return self.wechat_api_client = Wechat.api if account == :default && opts.empty?
 
-
       secret = opts[:secret] || Wechat.config(account).secret
       Wechat::Api.new(appid, secret, access_token, \
                       timeout, skip_verify_ssl, jsapi_ticket)
