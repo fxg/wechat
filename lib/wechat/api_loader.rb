@@ -103,9 +103,8 @@ HELP
           # Treat is as one account when env is omitted
           configs[:default] = raw_data
         end
-        configs
-
         puts "tttttttttttttt, configs: #{configs.to_json}"
+        configs
       end
     end
 
