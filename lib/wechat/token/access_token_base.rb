@@ -40,6 +40,7 @@ module Wechat
       end
 
       def write_token(token_hash)
+        p token_hash.to_json
         File.write(token_file, token_hash.to_json)
       end
 
