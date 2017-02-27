@@ -22,6 +22,7 @@ module Wechat
 
       def read_token_from_store
         td = read_token
+        p td
         @token_life_in_seconds = td.fetch('token_expires_in').to_i
         @got_token_at = td.fetch('got_token_at').to_i
         @access_token = td.fetch('access_token') # return access_token same time
@@ -40,7 +41,6 @@ module Wechat
       end
 
       def write_token(token_hash)
-        p token_hash.to_json
         File.write(token_file, token_hash.to_json)
       end
 
