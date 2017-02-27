@@ -36,6 +36,7 @@ module ActionController
 
       logger = Logger.new('/var/tmp/ttt.log')
       logger.info "Argument #{ access_token } mismatch."
+      logger.close
 
       secret = opts[:secret] || Wechat.config(account).secret
       Wechat::Api.new(appid, secret, access_token, \
