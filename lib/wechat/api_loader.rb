@@ -7,7 +7,7 @@ module Wechat
       token_file = options[:token_file] || c.access_token || '/var/tmp/wechat_access_token'
       js_token_file = options[:js_token_file] || c.jsapi_ticket || '/var/tmp/wechat_jsapi_ticket'
 
-      puts "#{token_file}"
+      puts "tttttttttttttt: #{c.appid}"
 
       if c.appid && c.secret && token_file.present?
         Wechat::Api.new(c.appid, c.secret, token_file, c.timeout, c.skip_verify_ssl, js_token_file)
