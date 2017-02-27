@@ -104,6 +104,8 @@ HELP
           configs[:default] = raw_data
         end
         configs
+
+        puts "tttttttttttttt, configs: #{configs.to_json}"
       end
     end
 
