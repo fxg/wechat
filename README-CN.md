@@ -74,8 +74,6 @@ Redis存贮相比默认的文件存贮，可以允许Rails应用运行在多台�
 
 默认通过`rails g wechat:install`生成的URL是： `http://your-server.com/wechat`
 
-appid/corpid，以及secret的配置请阅读下一节
-
 #### 命令行程序的配置
 
 要使用命令行程序，需要在home目录中创建一个`~/.wechat.yml`，包含以下内容。其中`access_token`是存放access_token的文件位置。
@@ -84,15 +82,6 @@ appid/corpid，以及secret的配置请阅读下一节
 appid: "my_appid"
 secret: "my_secret"
 access_token: "/var/tmp/wechat_access_token"
-```
-
-Windows或者使用企业号，需要存放在`C:/Users/[user_name]/`下，其中corpid和corpsecret可以从企业号管理界面的设置->权限管理，通过新建任意一个管理组后获取。
-
-```
-corpid: "my_appid"
-corpsecret: "my_secret"
-agentid: 1 # 企业应用的id，整型。可在应用的设置页面查看
-access_token: "C:/Users/[user_name]/wechat_access_token"
 ```
 
 #### Rails 全局配置
@@ -132,22 +121,14 @@ default: &default
   encoding_aes_key:  "my_encoding_aes_key"
 ```
 
-企业号配置下必须使用加密模式，其中token和encoding_aes_key可以从企业号管理界面的应用中心->某个应用->模式选择，选择回调模式后获得。
-
 ```
 default: &default
-  corpid: "corpid"
-  corpsecret: "corpsecret"
-  agentid:  1
   access_token: "C:/Users/[user_name]/wechat_access_token"
   token:    ""
   encoding_aes_key:  ""
   jsapi_ticket: "C:/Users/[user_name]/wechat_jsapi_ticket"
 
 production:
-  corpid:     <%= ENV['WECHAT_CORPID'] %>
-  corpsecret: <%= ENV['WECHAT_CORPSECRET'] %>
-  agentid:    <%= ENV['WECHAT_AGENTID'] %>
   access_token:  <%= ENV['WECHAT_ACCESS_TOKEN'] %>
   token:      <%= ENV['WECHAT_TOKEN'] %>
   timeout:    30,

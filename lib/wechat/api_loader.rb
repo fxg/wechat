@@ -9,8 +9,6 @@ module Wechat
 
       if c.appid && c.secret && token_file.present?
         Wechat::Api.new(c.appid, c.secret, token_file, c.timeout, c.skip_verify_ssl, js_token_file)
-      elsif c.corpid && c.corpsecret && token_file.present?
-        Wechat::CorpApi.new(c.corpid, c.corpsecret, token_file, c.agentid, c.timeout, c.skip_verify_ssl, js_token_file)
       else
         puts <<-HELP
 Need create ~/.wechat.yml with wechat appid and secret
@@ -75,7 +73,7 @@ HELP
           end
           rails_env = ENV['RAILS_ENV'] || 'development'
           config = resovle_config_file(rails_config_file, rails_env)
-          if config.present? && (default = config[:default])  && (default['appid'] || default['corpid'])
+          if config.present? && (default = config[:default])  && (default['appid'])
             puts "Using rails project #{ENV['WECHAT_CONF_FILE'] || "config/wechat.yml"} #{rails_env} setting..."
             return config
           end
@@ -110,9 +108,6 @@ HELP
     private_class_method def self.config_from_environment
       value = { appid: ENV['WECHAT_APPID'],
         secret: ENV['WECHAT_SECRET'],
-        corpid: ENV['WECHAT_CORPID'],
-        corpsecret: ENV['WECHAT_CORPSECRET'],
-        agentid: ENV['WECHAT_AGENTID'],
         token: ENV['WECHAT_TOKEN'],
         access_token: ENV['WECHAT_ACCESS_TOKEN'],
         encrypt_mode: ENV['WECHAT_ENCRYPT_MODE'],

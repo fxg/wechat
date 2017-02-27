@@ -73,10 +73,6 @@ module Wechat
       update(ToUserName: openid_or_userid)
     end
 
-    def agent_id(agentid)
-      update(AgentId: agentid)
-    end
-
     def text(content)
       update(MsgType: 'text', Content: content)
     end

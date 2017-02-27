@@ -21,9 +21,7 @@ module ActionController
     def load_controller_wechat(account, opts = {})
       self.token = opts[:token] || Wechat.config(account).token
       self.appid = opts[:appid] || Wechat.config(account).appid
-      self.corpid = opts[:corpid] || Wechat.config(account).corpid
-      self.agentid = opts[:agentid] || Wechat.config(account).agentid
-      self.encrypt_mode = opts[:encrypt_mode] || Wechat.config(account).encrypt_mode || corpid.present?
+      self.encrypt_mode = opts[:encrypt_mode] || Wechat.config(account).encrypt_mode
       self.timeout = opts[:timeout] || 20
       self.skip_verify_ssl = opts[:skip_verify_ssl]
       self.encoding_aes_key = opts[:encoding_aes_key] || Wechat.config(account).encoding_aes_key
@@ -36,15 +34,10 @@ module ActionController
 
       return self.wechat_api_client = Wechat.api if account == :default && opts.empty?
 
-      if corpid.present?
-        corpsecret = opts[:corpsecret] || Wechat.config(account).corpsecret
-        Wechat::CorpApi.new(corpid, corpsecret, access_token, \
-                            agentid, timeout, skip_verify_ssl, jsapi_ticket)
-      else
-        secret = opts[:secret] || Wechat.config(account).secret
-        Wechat::Api.new(appid, secret, access_token, \
-                        timeout, skip_verify_ssl, jsapi_ticket)
-      end
+
+      secret = opts[:secret] || Wechat.config(account).secret
+      Wechat::Api.new(appid, secret, access_token, \
+                      timeout, skip_verify_ssl, jsapi_ticket)
     end
   end
 

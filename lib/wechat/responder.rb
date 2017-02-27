@@ -170,19 +170,10 @@ module Wechat
     end
 
     def show
-      if self.class.corpid.present?
-        echostr, _corp_id = unpack(decrypt(Base64.decode64(params[:echostr]), self.class.encoding_aes_key))
-        if Rails::VERSION::MAJOR >= 4
-          render plain: echostr
-        else
-          render text: echostr
-        end
+      if Rails::VERSION::MAJOR >= 4
+        render plain: params[:echostr]
       else
-        if Rails::VERSION::MAJOR >= 4
-          render plain: params[:echostr]
-        else
-          render text: params[:echostr]
-        end
+        render text: params[:echostr]
       end
     end
 
@@ -215,7 +206,7 @@ module Wechat
         signature = params[:signature]
       end
 
-      msg_encrypt = nil unless self.class.corpid.present?
+      msg_encrypt = nil unless self.class.appid.present?
 
       render plain: 'Forbidden', status: 403 if signature != Signature.hexdigest(self.class.token,
                                                                                  params[:timestamp],

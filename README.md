@@ -81,8 +81,6 @@ Make sure to finish all the setup on rails side first, then submit to wechat. Ot
 
 URL address for wechat created by running `rails g wechat:install` is `http://your-server.com/wechat`
 
-How to setup appid/corpid and secret see below section.
-
 #### Configure for command line
 
 To use `wechat` command solely, you need to create configuration file `~/.wechat.yml` and include content below  for public account. The access_token will be written to a file.
@@ -91,17 +89,6 @@ To use `wechat` command solely, you need to create configuration file `~/.wechat
 appid: "my_appid"
 secret: "my_secret"
 access_token: "/var/tmp/wechat_access_token"
-```
-
-For enterprise account, you need to use `corpid` instead of `appid` as enterprise account supports multiply application (Tencent calls them agents) in one enterprise account. Obtaining the `corpsecret` is a little bit tricky, must be created at management mode->privilege setting and create any of management group to obtain. Due to Tencent currently only providing Chinese interface for their management console, it's highly recommended you find a colleague knowing Mandarin to help you to obtain the `corpsecret`.
-
-Windows users need to store `.wechat.yml` at `C:/Users/[user_name]/` (replace with your user name), also pay attention to the direction of folder separator.
-
-```
-corpid: "my_appid"
-corpsecret: "my_secret"
-agentid: 1 # Integer, which can be obtained from application settings
-access_token: "C:/Users/[user_name]/wechat_access_token"
 ```
 
 #### Configure for Rails
@@ -143,24 +130,14 @@ default: &default
   encoding_aes_key:  "my_encoding_aes_key"
 ```
 
-Enterprise account must use encrypt mode (`encrypt_mode: true` is on by default, no need to configure).
-
-The `token` and `encoding_aes_key` can be obtained from management console -> one of the agent application -> Mode selection, select callback mode and get/set.
-
 ```
 default: &default
-  corpid: "corpid"
-  corpsecret: "corpsecret"
-  agentid:  1
   access_token: "C:/Users/[user_name]/wechat_access_token"
   token:    ""
   encoding_aes_key:  ""
   jsapi_ticket: "C:/Users/[user_name]/wechat_jsapi_ticket"
 
 production:
-  corpid:     <%= ENV['WECHAT_CORPID'] %>
-  corpsecret: <%= ENV['WECHAT_CORPSECRET'] %>
-  agentid:    <%= ENV['WECHAT_AGENTID'] %>
   access_token:  <%= ENV['WECHAT_ACCESS_TOKEN'] %>
   token:      <%= ENV['WECHAT_TOKEN'] %>
   timeout:    30,

@@ -39,224 +39,64 @@ class App < Thor
     puts 'File downloaded'
   end
 
-  in_corp_api_cmd = Wechat::ApiLoader.with(options).is_a?(Wechat::CorpApi)
+  desc 'group_create [GROUP_NAME]', '创建分组'
+  def group_create(group_name)
+    puts wechat_api.group_create(group_name)
+  end
 
-  if in_corp_api_cmd
-    desc 'department_create [NAME, PARENT_ID]', '创建部门'
-    method_option :parentid, aliases: '-p', desc: '父亲部门id。根部门id为1'
-    def department_create(name)
-      api_opts = options.slice(:parentid)
-      puts wechat_api.department_create(name, api_opts[:parentid] || '1')
-    end
+  desc 'groups', '查询所有分组'
+  def groups
+    puts wechat_api.groups
+  end
 
-    desc 'department_delete [DEPARTMENT_ID]', '删除部门'
-    def department_delete(departmentid)
-      puts wechat_api.department_delete(departmentid)
-    end
+  desc 'user_group [OPEN_ID]', '查询用户所在分组'
+  def user_group(openid)
+    puts wechat_api.user_group(openid)
+  end
 
-    desc 'department_update [DEPARTMENT_ID, NAME]', '更新部门'
-    method_option :parentid, aliases: '-p', desc: '父亲部门id。根部门id为1', default: nil
-    method_option :order, aliases: '-o', desc: '在父部门中的次序值。order值小的排序靠前。', default: nil
-    def department_update(departmentid, name)
-      api_opts = options.slice(:parentid, :order)
-      puts wechat_api.department_update(departmentid, name, api_opts[:parentid], api_opts[:order])
-    end
+  desc 'group_update [GROUP_ID, NEW_GROUP_NAME]', '修改分组名'
+  def group_update(groupid, new_group_name)
+    puts wechat_api.group_update(groupid, new_group_name)
+  end
 
-    desc 'department [DEPARTMENT_ID]', '获取部门列表'
-    def department(departmentid = 0)
-      r = wechat_api.department(departmentid)
-      puts "errcode: #{r['errcode']} errmsg: #{r['errmsg']}"
-      puts 'Or# pid  id name'
-      r['department'].sort_by { |d| d['order'].to_i + d['parentid'].to_i * 1000 } .each do |i|
-        puts format('%3d %3d %3d %s', i['order'], i['parentid'], i['id'], i['name'])
-      end
-    end
+  desc 'user_change_group [OPEN_ID, TO_GROUP_ID]', '移动用户分组'
+  def user_change_group(openid, to_groupid)
+    puts wechat_api.user_change_group(openid, to_groupid)
+  end
 
-    desc 'user_delete [USER_ID]', '删除成员'
-    def user_delete(userid)
-      puts wechat_api.user_delete(userid)
-    end
+  desc 'group_delete [GROUP_ID]', '删除分组'
+  def group_delete(groupid)
+    puts wechat_api.group_delete(groupid)
+  end
 
-    desc 'user_batchdelete [USER_ID_LIST]', '批量删除成员'
-    def user_batchdelete(useridlist)
-      puts wechat_api.user_batchdelete(useridlist.split(','))
-    end
+  desc 'users', '关注者列表'
+  def users
+    puts wechat_api.users
+  end
 
-    desc 'user_simplelist [DEPARTMENT_ID]', '获取部门成员'
-    method_option :fetch_child, aliases: '-c', desc: '是否递归获取子部门下面的成员', default: 1
-    method_option :status, aliases: '-s', desc: '0 获取全部成员，1 获取已关注成员列表，2 获取禁用成员列表，4 获取未关注成员列表。status可叠加', default: 0
-    def user_simplelist(departmentid = 0)
-      api_opts = options.slice(:fetch_child, :status)
+  desc 'user_batchget [OPEN_ID_LIST]', '批量获取用户基本信息'
+  def user_batchget(openidlist)
+    puts wechat_api.user_batchget(openidlist.split(','))
+  end
 
-      r = wechat_api.user_simplelist(departmentid, api_opts[:fetch_child], api_opts[:status])
-      puts "errcode: #{r['errcode']} errmsg: #{r['errmsg']}"
-      puts " userid Name #{' ' * 20} department_ids"
-      r['userlist'].sort_by { |d| d['userid'] } .each do |i|
-        puts format('%7s %-25s %-14s', i['userid'], i['name'], i['department'])
-      end
-    end
+  desc 'qrcode_create_scene [SCENE_ID, EXPIRE_SECONDS]', '请求临时二维码'
+  def qrcode_create_scene(scene_id, expire_seconds = 604800)
+    puts wechat_api.qrcode_create_scene(scene_id, expire_seconds)
+  end
 
-    desc 'user_list [DEPARTMENT_ID]', '获取部门成员详情'
-    method_option :fetch_child, aliases: '-c', desc: '是否递归获取子部门下面的成员', default: 0
-    method_option :status, aliases: '-s', desc: '0 获取全部成员，1 获取已关注成员列表，2 获取禁用成员列表，4 获取未关注成员列表。status可叠加', default: 0
-    def user_list(departmentid = 0)
-      api_opts = options.slice(:fetch_child, :status)
+  desc 'qrcode_create_limit_scene [SCENE_ID_OR_STR]', '请求永久二维码'
+  def qrcode_create_limit_scene(scene_id_or_str)
+    puts wechat_api.qrcode_create_limit_scene(scene_id_or_str)
+  end
 
-      r = wechat_api.user_list(departmentid, api_opts[:fetch_child], api_opts[:status])
-      puts "errcode: #{r['errcode']} errmsg: #{r['errmsg']}"
-      puts " userid Name #{' ' * 15} department_ids position mobile #{' ' * 5}gender email #{' ' * 10}weixinid   status extattr"
-      r['userlist'].sort_by { |d| d['userid'] } .each do |i|
-        puts format('%7s %-20s %-14s %-8s %-11s %-6s %-15s %-15s %-6s %s',
-                    i['userid'], i['name'], i['department'], i['position'], i['mobile'],
-                    i['gender'], i['email'], i['weixinid'], i['status'], i['extattr'])
-      end
-    end
+  desc 'short_url [LONG_URL]', '长链接转短链接'
+  def short_url(long_url)
+    puts wechat_api.short_url(long_url)
+  end
 
-    desc 'invite_user [USER_ID]', '邀请成员关注'
-    def invite_user(userid)
-      puts wechat_api.invite_user(userid)
-    end
-
-    desc 'tag_add_department [TAG_ID, PARTY_IDS]', '增加标签部门'
-    def tag_add_department(tagid, partyids)
-      puts wechat_api.tag_add_user(tagid, nil, partyids.split(','))
-    end
-
-    desc 'tag_del_department [TAG_ID, PARTY_IDS]', '删除标签部门'
-    def tag_del_department(tagid, partyids)
-      puts wechat_api.tag_del_user(tagid, nil, partyids.split(','))
-    end
-
-    desc 'batch_job_result [JOB_ID]', '获取异步任务结果'
-    def batch_job_result(job_id)
-      puts wechat_api.batch_job_result(job_id)
-    end
-
-    desc 'batch_replaceparty [BATCH_PARTY_CSV_MEDIA_ID]', '全量覆盖部门'
-    def batch_replaceparty(batch_party_csv_media_id)
-      puts wechat_api.batch_replaceparty(batch_party_csv_media_id)
-    end
-
-    desc 'upload_replaceparty [BATCH_PARTY_CSV_PATH]', '上传文件方式全量覆盖部门'
-    def upload_replaceparty(batch_party_csv_path)
-      media_id = wechat_api.media_create('file', batch_party_csv_path)['media_id']
-      job_id = wechat_api.batch_replaceparty(media_id)['jobid']
-      puts "running job_id: #{job_id}"
-      puts wechat_api.batch_job_result(job_id)
-    end
-
-    desc 'batch_syncuser [SYNC_USER_CSV_MEDIA_ID]', '增量更新成员'
-    def batch_syncuser(sync_user_csv_media_id)
-      puts wechat_api.batch_syncuser(sync_user_csv_media_id)
-    end
-
-    desc 'batch_replaceuser [BATCH_USER_CSV_MEDIA_ID]', '全量覆盖成员'
-    def batch_replaceuser(batch_user_csv_media_id)
-      puts wechat_api.batch_replaceuser(batch_user_csv_media_id)
-    end
-
-    desc 'upload_replaceuser [BATCH_USER_CSV_PATH]', '上传文件方式全量覆盖成员'
-    def upload_replaceuser(batch_user_csv_path)
-      media_id = wechat_api.media_create('file', batch_user_csv_path)['media_id']
-      job_id = wechat_api.batch_replaceuser(media_id)['jobid']
-      puts "running job_id: #{job_id}"
-      puts wechat_api.batch_job_result(job_id)
-    end
-
-    desc 'convert_to_openid [USER_ID]', 'userid转换成openid'
-    def convert_to_openid(userid)
-      puts wechat_api.convert_to_openid(userid)
-    end
-
-    desc 'agent_list', '获取应用概况列表'
-    def agent_list
-      r = wechat_api.agent_list
-      puts "errcode: #{r['errcode']} errmsg: #{r['errmsg']}"
-      puts 'ag# name        square_logo_url round_logo_url'
-      r['agentlist'].sort_by { |d| d['agentid'] } .each do |i|
-        puts format('%3d %s %s %s', i['agentid'], i['name'], i['square_logo_url'], i['round_logo_url'])
-      end
-    end
-
-    desc 'agent [AGENT_ID]', '获取企业号应用详情'
-    def agent(agentid)
-      r = wechat_api.agent(agentid)
-      puts "agentid: #{r['agentid']} errcode: #{r['errcode']} errmsg: #{r['errmsg']}"
-      puts "name: #{r['name']}"
-      puts "description: #{r['description']}"
-      puts "  square_logo_url: #{r['square_logo_url']}"
-      puts "   round_logo_url: #{r['round_logo_url']}"
-      puts "allow_userinfos: #{r['allow_userinfos']}"
-      puts "allow_partys: #{r['allow_partys']}"
-      puts "allow_tags: #{r['allow_tags']}"
-      puts "close: #{r['close']} redirect_domain: #{r['redirect_domain']}"
-      puts "report_location_flag: #{r['report_location_flag']} isreportuser: #{r['isreportuser']} isreportenter: #{r['isreportenter']}"
-    end
-
-    desc 'message_send [OPENID, TEXT_MESSAGE]', '发送文字消息'
-    def message_send(openid, text_message)
-      puts wechat_api.message_send openid, text_message
-    end
-  else
-    desc 'group_create [GROUP_NAME]', '创建分组'
-    def group_create(group_name)
-      puts wechat_api.group_create(group_name)
-    end
-
-    desc 'groups', '查询所有分组'
-    def groups
-      puts wechat_api.groups
-    end
-
-    desc 'user_group [OPEN_ID]', '查询用户所在分组'
-    def user_group(openid)
-      puts wechat_api.user_group(openid)
-    end
-
-    desc 'group_update [GROUP_ID, NEW_GROUP_NAME]', '修改分组名'
-    def group_update(groupid, new_group_name)
-      puts wechat_api.group_update(groupid, new_group_name)
-    end
-
-    desc 'user_change_group [OPEN_ID, TO_GROUP_ID]', '移动用户分组'
-    def user_change_group(openid, to_groupid)
-      puts wechat_api.user_change_group(openid, to_groupid)
-    end
-
-    desc 'group_delete [GROUP_ID]', '删除分组'
-    def group_delete(groupid)
-      puts wechat_api.group_delete(groupid)
-    end
-
-    desc 'users', '关注者列表'
-    def users
-      puts wechat_api.users
-    end
-
-    desc 'user_batchget [OPEN_ID_LIST]', '批量获取用户基本信息'
-    def user_batchget(openidlist)
-      puts wechat_api.user_batchget(openidlist.split(','))
-    end
-
-    desc 'qrcode_create_scene [SCENE_ID, EXPIRE_SECONDS]', '请求临时二维码'
-    def qrcode_create_scene(scene_id, expire_seconds = 604800)
-      puts wechat_api.qrcode_create_scene(scene_id, expire_seconds)
-    end
-
-    desc 'qrcode_create_limit_scene [SCENE_ID_OR_STR]', '请求永久二维码'
-    def qrcode_create_limit_scene(scene_id_or_str)
-      puts wechat_api.qrcode_create_limit_scene(scene_id_or_str)
-    end
-
-    desc 'short_url [LONG_URL]', '长链接转短链接'
-    def short_url(long_url)
-      puts wechat_api.short_url(long_url)
-    end
-
-    desc 'customservice_getonlinekflist', '获取在线客服接待信息'
-    def customservice_getonlinekflist
-      puts wechat_api.customservice_getonlinekflist
-    end
+  desc 'customservice_getonlinekflist', '获取在线客服接待信息'
+  def customservice_getonlinekflist
+    puts wechat_api.customservice_getonlinekflist
   end
 
   desc 'user [OPEN_ID]', '获取用户基本信息'
@@ -421,14 +261,8 @@ class App < Thor
   end
 
   desc 'tag_create [TAGNAME, TAG_ID]', '创建标签'
-  method_option :tagid, aliases: '-id', desc: '整型，指定此参数时新增的标签会生成对应的标签id，不指定时则以目前最大的id自增' if in_corp_api_cmd
   def tag_create(tag_name)
-    if in_corp_api_cmd
-      api_opts = options.slice(:tagid)
-      puts wechat_api.tag_create(tag_name, api_opts[:tagid])
-    else
-      puts wechat_api.tag_create(tag_name)
-    end
+    puts wechat_api.tag_create(tag_name)
   end
 
   desc 'tag_update [TAG_ID, TAGNAME]', '更新标签名字'
@@ -441,29 +275,18 @@ class App < Thor
     puts wechat_api.tag_delete(tagid)
   end
 
-  if in_corp_api_cmd
-    desc 'tag_add_user [TAG_ID, USER_IDS]', '增加标签成员'
-  else
-    desc 'tag_add_user [TAG_ID, OPEN_IDS]', '批量为用户打标签'
-  end
+
+  desc 'tag_add_user [TAG_ID, OPEN_IDS]', '批量为用户打标签'
   def tag_add_user(tagid, open_or_user_ids)
     puts wechat_api.tag_add_user(tagid, open_or_user_ids.split(','))
   end
 
-  if in_corp_api_cmd
-    desc 'tag_del_user [TAG_ID, USER_IDS]', '删除标签成员'
-  else
-    desc 'tag_del_user [TAG_ID, OPEN_IDS]', '批量为用户取消标签'
-  end
+  desc 'tag_del_user [TAG_ID, OPEN_IDS]', '批量为用户取消标签'
   def tag_del_user(tagid, open_or_user_ids)
     puts wechat_api.tag_del_user(tagid, open_or_user_ids.split(','))
   end
 
-  if in_corp_api_cmd
-    desc 'tag [TAG_ID]', '获取标签成员'
-  else
-    desc 'tag [TAGID]', '获取标签下粉丝列表'
-  end
+  desc 'tag [TAGID]', '获取标签下粉丝列表'
   def tag(tagid)
     puts wechat_api.tag tagid
   end

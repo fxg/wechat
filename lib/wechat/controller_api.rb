@@ -3,7 +3,7 @@ module Wechat
     extend ActiveSupport::Concern
 
     module ClassMethods
-      attr_accessor :wechat_api_client, :wechat_cfg_account, :token, :appid, :corpid, :agentid, :encrypt_mode, :timeout,
+      attr_accessor :wechat_api_client, :wechat_cfg_account, :token, :appid, :encrypt_mode, :timeout,
                     :skip_verify_ssl, :encoding_aes_key, :trusted_domain_fullname, :oauth2_cookie_duration
     end
 
@@ -12,11 +12,11 @@ module Wechat
     end
 
     def wechat_oauth2(scope = 'snsapi_base', page_url = nil, &block)
-      appid = self.class.corpid || self.class.appid || lambda do
+      appid = self.class.appid || lambda do
         self.class.wechat # to initialize wechat_api_client at first time call wechat_oauth2
-        self.class.corpid || self.class.appid
+        self.class.appid
       end.call
-      raise 'Can not get corpid or appid, so please configure it first to using wechat_oauth2' if appid.blank?
+      raise 'Can not get appid, so please configure it first to using wechat_oauth2' if appid.blank?
 
       wechat.jsapi_ticket.ticket if wechat.jsapi_ticket.oauth2_state.nil?
       oauth2_params = {
@@ -28,7 +28,7 @@ module Wechat
       }
 
       return generate_oauth2_url(oauth2_params) unless block_given?
-      self.class.corpid ? wechat_corp_oauth2(oauth2_params, &block) : wechat_public_oauth2(oauth2_params, &block)
+      wechat_public_oauth2(oauth2_params, &block)
     end
 
     private
