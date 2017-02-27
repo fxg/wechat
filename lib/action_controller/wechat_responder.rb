@@ -34,7 +34,8 @@ module ActionController
 
       return self.wechat_api_client = Wechat.api if account == :default && opts.empty?
 
-      p "#{appid}"
+      logger = Logger.new(STDOUT)
+      logger.info "Argument #{ access_token } mismatch."
 
       secret = opts[:secret] || Wechat.config(account).secret
       Wechat::Api.new(appid, secret, access_token, \
