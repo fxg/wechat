@@ -37,6 +37,8 @@ module ActionController
       secret = opts[:secret] || Wechat.config(account).secret
       Wechat::Api.new(appid, secret, access_token, \
                       timeout, skip_verify_ssl, jsapi_ticket)
+      # Wechat::Api.new(appid, access_token, \
+      #                 timeout, skip_verify_ssl, jsapi_ticket)
     end
   end
 
