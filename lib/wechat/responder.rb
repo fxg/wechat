@@ -201,17 +201,16 @@ module Wechat
     def verify_signature
       if self.class.encrypt_mode
         signature = params[:signature] || params[:msg_signature]
-        msg_encrypt = params[:echostr] || request_encrypt_content
+        # msg_encrypt = params[:echostr] || request_encrypt_content
       else
         signature = params[:signature]
       end
 
-      msg_encrypt = nil
+      # msg_encrypt = nil
 
       render plain: 'Forbidden', status: 403 if signature != Signature.hexdigest(self.class.token,
                                                                                  params[:timestamp],
-                                                                                 params[:nonce],
-                                                                                 msg_encrypt)
+                                                                                 params[:nonce])
     end
 
     def post_xml
