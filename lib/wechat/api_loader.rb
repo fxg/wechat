@@ -7,8 +7,6 @@ module Wechat
       token_file = options[:token_file] || c.access_token || '/var/tmp/wechat_access_token'
       js_token_file = options[:js_token_file] || c.jsapi_ticket || '/var/tmp/wechat_jsapi_ticket'
 
-      puts "tttttttttttttt: #{token_file}"
-
       if c.appid && c.secret && token_file.present?
         Wechat::Api.new(c.appid, c.secret, token_file, c.timeout, c.skip_verify_ssl, js_token_file)
       else
@@ -63,6 +61,7 @@ HELP
     private_class_method def self.config_from_file
       if defined?(::Rails)
         config_file = ENV['WECHAT_CONF_FILE'] || Rails.root.join('config/wechat.yml')
+        puts "tttttttttttttt, config_file: #{config_file}"
         return resovle_config_file(config_file, Rails.env.to_s)
       else
         rails_config_file = ENV['WECHAT_CONF_FILE'] || File.join(Dir.getwd, 'config/wechat.yml')
