@@ -19,10 +19,11 @@ module Wechat
           skip_before_action :verify_authenticity_token, raise: false
         end
 
-        before_action :verify_signature, only: [:show, :create]
+        # before_action :verify_signature, only: [:show, :create]
+        before_action :verify_signature, only: [:show, :create, :auth]
       else
         skip_before_filter :verify_authenticity_token
-        before_filter :verify_signature, only: [:show, :create]
+        before_filter :verify_signature, only: [:show, :create, :auth]
       end
     end
 
@@ -196,6 +197,12 @@ module Wechat
       ActiveSupport::Notifications.instrument 'wechat.responder.after_create', request: request_msg, response: response_msg
     end
 
+    def auth
+      data = post_xml
+      p "InfoType: #{data[:InfoType]}"
+      return render plain: "success"
+    end
+
     private
 
     def verify_signature
@@ -213,13 +220,13 @@ module Wechat
 
     def post_xml
       data = request_content
-
       if self.class.encrypt_mode && request_encrypt_content.present?
         content, @app_id = unpack(decrypt(Base64.decode64(request_encrypt_content), self.class.encoding_aes_key))
         data = Hash.from_xml(content)
       end
 
       data_hash = data.fetch('xml', {})
+
       if Rails::VERSION::MAJOR >= 5
         data_hash = data_hash.to_unsafe_hash if data_hash.instance_of?(ActionController::Parameters)
         HashWithIndifferentAccess.new(data_hash).tap do |msg|
@@ -257,7 +264,6 @@ module Wechat
         encrypt = Base64.strict_encode64(encrypt(pack(msg, @app_id), self.class.encoding_aes_key))
         msg = gen_msg(encrypt, params[:timestamp], params[:nonce])
       end
-
       msg
     end
 
