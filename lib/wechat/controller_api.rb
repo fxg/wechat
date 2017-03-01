@@ -4,7 +4,8 @@ module Wechat
 
     module ClassMethods
       attr_accessor :wechat_api_client, :wechat_cfg_account, :token, :appid, :encrypt_mode, :timeout,
-                    :skip_verify_ssl, :encoding_aes_key, :trusted_domain_fullname, :oauth2_cookie_duration
+                    :skip_verify_ssl, :encoding_aes_key, :trusted_domain_fullname, :oauth2_cookie_duration,
+                    :component_appid, :component_secret
     end
 
     def wechat

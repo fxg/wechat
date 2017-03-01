@@ -4,11 +4,12 @@ module Wechat
       account = options[:account] || :default
       c = ApiLoader.config(account)
 
-      token_file = options[:token_file] || c.access_token || '/var/tmp/wechat_access_token'
-      js_token_file = options[:js_token_file] || c.jsapi_ticket || '/var/tmp/wechat_jsapi_ticket'
+      token_file = options[:token_file] || c.access_token || "/var/tmp/wechat_access_token"
+      jsapi_ticket_file = options[:jsapi_ticket_file] || c.jsapi_ticket || "/var/tmp/wechat_jsapi_ticket_#{component_appid}"
+      component_appid = options[:component_appid] || c.component_appid
 
       if c.appid && c.secret && token_file.present?
-        Wechat::Api.new(c.appid, c.secret, token_file, c.timeout, c.skip_verify_ssl, js_token_file)
+        Wechat::Api.new(c.appid, c.secret, token_file, c.timeout, c.skip_verify_ssl, jsapi_ticket_file, component_appid)
       else
         puts <<-HELP
 Need create ~/.wechat.yml with wechat appid and secret
@@ -40,8 +41,8 @@ HELP
 
       if defined?(::Rails)
         configs.each do |_, cfg|
-          cfg[:access_token] ||= Rails.root.try(:join, 'tmp/access_token').try(:to_path)
-          cfg[:jsapi_ticket] ||= Rails.root.try(:join, 'tmp/jsapi_ticket').try(:to_path)
+          cfg[:access_token] ||= Rails.root.try(:join, "tmp/access_token_#{cfg[:appid]}").try(:to_path)
+          cfg[:jsapi_ticket] ||= Rails.root.try(:join, "tmp/jsapi_ticket_#{cfg[:component_appid]}").try(:to_path)
         end
       end
 
@@ -115,7 +116,9 @@ HELP
         skip_verify_ssl: ENV['WECHAT_SKIP_VERIFY_SSL'],
         encoding_aes_key: ENV['WECHAT_ENCODING_AES_KEY'],
         jsapi_ticket: ENV['WECHAT_JSAPI_TICKET'],
-        trusted_domain_fullname: ENV['WECHAT_TRUSTED_DOMAIN_FULLNAME'] }
+        trusted_domain_fullname: ENV['WECHAT_TRUSTED_DOMAIN_FULLNAME'],
+        component_appid: ENV['WECHAT_COMPONENT_APPID'],
+        component_secret: ENV['WECHAT_COMPONENT_SECRET'] }
       {default: value}
     end
 

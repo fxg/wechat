@@ -179,6 +179,12 @@ module Wechat
     end
 
     def create
+      # p "获取参数auth_app_id：#{params[:auth_app_id]}"
+      # 设置本次会话的auth_app_id
+      wechat.auth_app_id = params[:auth_app_id]
+      # 获取或刷新对应auth_app_id的token
+      # wechat.access_token.refresh
+      p "wechat.auth_app_id: #{wechat.auth_app_id}"
       request_msg = Wechat::Message.from_hash(post_xml)
       response_msg = run_responder(request_msg)
 
@@ -198,9 +204,6 @@ module Wechat
     end
 
     def auth
-      data = post_xml
-      p "InfoType: #{data[:InfoType]}"
-      return render plain: "success"
     end
 
     private

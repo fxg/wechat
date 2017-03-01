@@ -7,10 +7,12 @@ module Wechat
   class Api < ApiBase
     API_BASE = 'https://api.weixin.qq.com/cgi-bin/'.freeze
 
-    def initialize(appid, secret, token_file, timeout, skip_verify_ssl, jsapi_ticket_file)
+    def initialize(appid, secret, token_file, timeout, skip_verify_ssl, jsapi_ticket_file, component_appid)
       @client = HttpClient.new(API_BASE, timeout, skip_verify_ssl)
       @access_token = Token::PublicAccessToken.new(@client, appid, secret, token_file)
       @jsapi_ticket = Ticket::PublicJsapiTicket.new(@client, @access_token, jsapi_ticket_file)
+      @component_appid = component_appid
+      @auth_app_id = ''
     end
 
     def groups

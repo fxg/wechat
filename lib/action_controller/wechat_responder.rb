@@ -1,11 +1,13 @@
 module ActionController
   module WechatResponder
+    # 页面型
     def wechat_api(opts = {})
       include Wechat::ControllerApi
       self.wechat_cfg_account = opts[:account].present? ? opts[:account].to_sym : :default
       self.wechat_api_client = load_controller_wechat(wechat_cfg_account, opts)
     end
 
+    # 消息型
     def wechat_responder(opts = {})
       include Wechat::Responder
       self.wechat_cfg_account = opts[:account].present? ? opts[:account].to_sym : :default
@@ -29,6 +31,9 @@ module ActionController
       Wechat.config(account).oauth2_cookie_duration ||= 1.hour
       self.oauth2_cookie_duration = opts[:oauth2_cookie_duration] || Wechat.config(account).oauth2_cookie_duration.to_i.seconds
 
+      self.component_appid = opts[:component_appid] || Wechat.config(account).component_appid
+      self.component_secret = opts[:component_secret] || Wechat.config(account).component_secret
+
       access_token = opts[:access_token] || Wechat.config(account).access_token
       jsapi_ticket = opts[:jsapi_ticket] || Wechat.config(account).jsapi_ticket
 
@@ -36,7 +41,7 @@ module ActionController
 
       secret = opts[:secret] || Wechat.config(account).secret
       Wechat::Api.new(appid, secret, access_token, \
-                      timeout, skip_verify_ssl, jsapi_ticket)
+                      timeout, skip_verify_ssl, jsapi_ticket, component_appid)
       # Wechat::Api.new(appid, access_token, \
       #                 timeout, skip_verify_ssl, jsapi_ticket)
     end
