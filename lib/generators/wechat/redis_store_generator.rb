@@ -10,6 +10,8 @@ module Wechat
 
       def add_redis_gem
         gem 'redis'
+        gem 'redis-objects'
+        gem 'connection_pool'
       end
     end
   end
