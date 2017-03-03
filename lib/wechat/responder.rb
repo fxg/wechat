@@ -204,13 +204,24 @@ module Wechat
       info_type = post_xml[:InfoType].to_sym
       case info_type
       when :component_verify_ticket
-        Wechat.redis.hmset("wechat_component_verify_ticket_#{wechat.component_appid}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
+        redis.hmset("wechat_component_verify_ticket_#{wechat.component_appid}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
       end
     ensure
       render plain: "success"
     end
 
     private
+
+    def authorizer_info
+      component_access_token = wechat.redis.hget("wechat_component_access_token_#{params[:component_appid]}", "component_access_token")
+      post_data = "{\"component_appid\" : \"#{params[:component_appid]}\", \"authorization_code\" : \"#{params[:auth_code]}\"}"
+      resp = wechat.client.post("component/api_query_auth?component_access_token=#{component_access_token}", post_data)
+      authorization_info_hash = resp['authorization_info']
+      p authorization_info_hash.to_json
+      p authorization_info_hash['authorizer_appid']
+      wechat.redis.set "wechat_authorization_info_#{params[:component_appid]}_#{authorization_info_hash['authorizer_appid']}", authorization_info_hash.to_json
+      wechat.redis.hmset "wechat_authorizer_access_token_#{params[:component_appid]}_#{authorization_info_hash['authorizer_appid']}", "authorizer_access_token", "#{authorization_info_hash['authorizer_access_token']}", "expires_in", "#{authorization_info_hash['expires_in']}", "authorizer_refresh_token", "#{authorization_info_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
+    end
 
     def verify_signature
       if self.class.encrypt_mode
