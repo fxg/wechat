@@ -8,7 +8,9 @@ default: &default
   encoding_aes_key:  "my_encoding_aes_key"
   jsapi_ticket: "/var/tmp/wechat_jsapi_ticket"
   component_appid: "my_component_appid"
-  component_secret: "my_component_secret"
+  redis_host: ""
+  redis_port: ""
+  redis_db: ""
 
 production:
 # using public account, only need above two line

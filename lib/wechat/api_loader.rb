@@ -4,12 +4,13 @@ module Wechat
       account = options[:account] || :default
       c = ApiLoader.config(account)
 
-      token_file = options[:token_file] || c.access_token || "/var/tmp/wechat_access_token"
-      jsapi_ticket_file = options[:jsapi_ticket_file] || c.jsapi_ticket || "/var/tmp/wechat_jsapi_ticket_#{component_appid}"
       component_appid = options[:component_appid] || c.component_appid
+      redis_host = options[:redis_host] || c.redis_host
+      redis_port = options[:redis_port] || c.redis_port || 6739
+      redis_db = options[:redis_db] || c.redis_db || 0
 
-      if c.appid && c.secret && token_file.present?
-        Wechat::Api.new(c.appid, c.secret, token_file, c.timeout, c.skip_verify_ssl, jsapi_ticket_file, component_appid)
+      if c.component_appid
+        Wechat::Api.new(component_appid, c.timeout, c.skip_verify_ssl, redis_host, redis_port, redis_db)
       else
         puts <<-HELP
 Need create ~/.wechat.yml with wechat appid and secret
@@ -107,18 +108,16 @@ HELP
     end
 
     private_class_method def self.config_from_environment
-      value = { appid: ENV['WECHAT_APPID'],
-        secret: ENV['WECHAT_SECRET'],
+      value = {
+        component_appid: ENV['WECHAT_COMPONENT_APPID'],
         token: ENV['WECHAT_TOKEN'],
-        access_token: ENV['WECHAT_ACCESS_TOKEN'],
-        encrypt_mode: ENV['WECHAT_ENCRYPT_MODE'],
+        encrypt_mode: true,
         timeout: ENV['WECHAT_TIMEOUT'],
         skip_verify_ssl: ENV['WECHAT_SKIP_VERIFY_SSL'],
         encoding_aes_key: ENV['WECHAT_ENCODING_AES_KEY'],
-        jsapi_ticket: ENV['WECHAT_JSAPI_TICKET'],
         trusted_domain_fullname: ENV['WECHAT_TRUSTED_DOMAIN_FULLNAME'],
-        component_appid: ENV['WECHAT_COMPONENT_APPID'],
-        component_secret: ENV['WECHAT_COMPONENT_SECRET'] }
+        redis_host: ENV['WECHAT_REDIS_HOST'],
+        redis_port: ENV['WECHAT_REDIS_POST']}
       {default: value}
     end
 

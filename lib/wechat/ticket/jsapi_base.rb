@@ -4,12 +4,11 @@ require 'securerandom'
 module Wechat
   module Ticket
     class JsapiBase
-      attr_reader :client, :access_token, :oauth2_state, :jsapi_ticket_file, :access_ticket, :ticket_life_in_seconds, :got_ticket_at
+      attr_reader :access_token, :oauth2_state, :access_ticket, :ticket_life_in_seconds, :got_ticket_at
 
-      def initialize(client, access_token, jsapi_ticket_file)
+      def initialize(client, access_token)
         @client = client
         @access_token = access_token
-        @jsapi_ticket_file = jsapi_ticket_file
         @random_generator = Random.new
       end
 
@@ -48,27 +47,18 @@ module Wechat
       protected
 
       def read_ticket_from_store
-        td = read_ticket
-        @ticket_life_in_seconds = td.fetch('ticket_expires_in').to_i
-        @got_ticket_at = td.fetch('got_ticket_at').to_i
-        @oauth2_state = td.fetch('oauth2_state')
-        @access_ticket = td.fetch('ticket') # return access_ticket same time
+        @ticket_life_in_seconds = redis.hget("wechat_authorizer_access_token_#{component_appid}_#{authorizer_appid}",
+        'expires_in').to_i
+        @got_ticket_at = redis.hget("wechat_authorizer_access_token_#{component_appid}_#{authorizer_appid}", 'got_token_at').to_i
+        @access_ticket = redis.hget("wechat_authorizer_access_token_#{component_appid}_#{authorizer_appid}", 'ticket')
+        @oauth2_state = SecureRandom.hex(16)
+        # td = read_ticket
+        # @ticket_life_in_seconds = td.fetch('ticket_expires_in').to_i
+        # @got_ticket_at = td.fetch('got_ticket_at').to_i
+        # @oauth2_state = td.fetch('oauth2_state')
+        # @access_ticket = td.fetch('ticket') # return access_ticket same time
       rescue JSON::ParserError, Errno::ENOENT, KeyError, TypeError
         refresh
-      end
-
-      def write_ticket_to_store(ticket_hash)
-        ticket_hash['got_ticket_at'.freeze] = Time.now.to_i
-        ticket_hash['ticket_expires_in'.freeze] = ticket_hash.delete('expires_in')
-        write_ticket(ticket_hash)
-      end
-
-      def read_ticket
-        JSON.parse(File.read(jsapi_ticket_file))
-      end
-
-      def write_ticket(ticket_hash)
-        File.write(jsapi_ticket_file, ticket_hash.to_json)
       end
 
       def remain_life_seconds

@@ -179,12 +179,9 @@ module Wechat
     end
 
     def create
-      # p "获取参数auth_app_id：#{params[:auth_app_id]}"
-      # 设置本次会话的auth_app_id
-      wechat.auth_app_id = params[:auth_app_id]
-      # 获取或刷新对应auth_app_id的token
-      # wechat.access_token.refresh
-      p "wechat.auth_app_id: #{wechat.auth_app_id}"
+      # 设置本次会话的authorizer_appid
+      wechat.authorizer_appid = params[:authorizer_appid]
+      # 获取或刷新对应authorizer_appid的token
       request_msg = Wechat::Message.from_hash(post_xml)
       response_msg = run_responder(request_msg)
 
@@ -204,6 +201,13 @@ module Wechat
     end
 
     def auth
+      info_type = post_xml[:InfoType].to_sym
+      case info_type
+      when :component_verify_ticket
+        Wechat.redis.hmset("wechat_component_verify_ticket_#{wechat.component_appid}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
+      end
+    ensure
+      render plain: "success"
     end
 
     private

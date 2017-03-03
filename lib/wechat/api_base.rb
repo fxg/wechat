@@ -1,7 +1,7 @@
 module Wechat
   class ApiBase
-    attr_reader :access_token, :client, :jsapi_ticket, :component_appid
-    attr_accessor :auth_app_id
+    attr_reader :access_token, :client, :jsapi_ticket, :component_appid, :redis
+    attr_accessor :authorizer_appid
 
     MP_BASE = 'https://mp.weixin.qq.com/cgi-bin/'.freeze
 
