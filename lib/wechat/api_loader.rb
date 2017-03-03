@@ -5,12 +5,12 @@ module Wechat
       c = ApiLoader.config(account)
 
       component_appid = options[:component_appid] || c.component_appid
-      redis_host = options[:redis_host] || c.redis_host
-      redis_port = options[:redis_port] || c.redis_port || 6739
-      redis_db = options[:redis_db] || c.redis_db || 0
+      # redis_host = options[:redis_host] || c.redis_host
+      # redis_port = options[:redis_port] || c.redis_port || 6739
+      # redis_db = options[:redis_db] || c.redis_db || 0
 
       if c.component_appid
-        Wechat::Api.new(component_appid, c.timeout, c.skip_verify_ssl, redis_host, redis_port, redis_db)
+        Wechat::Api.new(component_appid, c.timeout, c.skip_verify_ssl) # , redis_host, redis_port, redis_db
       else
         puts <<-HELP
 Need create ~/.wechat.yml with wechat appid and secret

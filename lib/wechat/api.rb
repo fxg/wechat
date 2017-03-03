@@ -7,12 +7,10 @@ module Wechat
   class Api < ApiBase
     API_BASE = 'https://api.weixin.qq.com/cgi-bin/'.freeze
 
-    def initialize(component_appid, timeout, skip_verify_ssl, redis_host, redis_port, redis_db)
-      @client = HttpClient.new(API_BASE, timeout, skip_verify_ssl)
-      @redis = Redis.new(:host => redis_host, :port => redis_port, :db => redis_db)
-      @access_token = Token::PublicAccessToken.new
-      @jsapi_ticket = Ticket::PublicJsapiTicket.new(@client, @access_token)
+    # def initialize(component_appid, timeout, skip_verify_ssl, redis_host, redis_port, redis_db)
+    def initialize(component_appid, timeout, skip_verify_ssl)
       @component_appid = component_appid
+      @client = HttpClient.new(API_BASE, timeout, skip_verify_ssl)
     end
 
     def groups
@@ -170,13 +168,16 @@ module Wechat
     OAUTH2_BASE = 'https://api.weixin.qq.com/sns/'.freeze
 
     def web_access_token(code)
+      component_access_token = Wechat.redis.hget("wechat_component_access_token_#{component_appid}", "component_access_token")
+
       params = {
-        appid: access_token.appid,
-        secret: access_token.secret,
+        appid: authorizer_appid,
         code: code,
-        grant_type: 'authorization_code'
+        grant_type: 'authorization_code',
+        component_appid: component_appid,
+        component_access_token: component_access_token
       }
-      client.get 'oauth2/access_token', params: params, base: OAUTH2_BASE
+      client.get 'oauth2/component/access_token', params: params, base: OAUTH2_BASE
     end
 
     def web_auth_access_token(web_access_token, openid)
@@ -185,11 +186,11 @@ module Wechat
 
     def web_refresh_access_token(user_refresh_token)
       params = {
-        appid: access_token.appid,
+        appid: authorizer_appid,
         grant_type: 'refresh_token',
         refresh_token: user_refresh_token
       }
-      client.get 'oauth2/refresh_token', params: params, base: OAUTH2_BASE
+      client.get 'oauth2/component/refresh_token', params: params, base: OAUTH2_BASE
     end
 
     def web_userinfo(web_access_token, openid, lang = 'zh_CN')

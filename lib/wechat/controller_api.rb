@@ -3,29 +3,29 @@ module Wechat
     extend ActiveSupport::Concern
 
     module ClassMethods
-      attr_accessor :wechat_api_client, :wechat_cfg_account, :component_appid, :token, :encrypt_mode, :timeout,
-                    :skip_verify_ssl, :encoding_aes_key, :trusted_domain_fullname, :oauth2_cookie_duration,
-                    :redis_host, :redis_port, :redis_db
+      attr_accessor :wechat_api_client, :wechat_cfg_account, :component_appid, :authorizer_appid, :token, :encrypt_mode, :timeout,
+                    :skip_verify_ssl, :encoding_aes_key, :trusted_domain_fullname, :oauth2_cookie_duration
     end
 
     def wechat
       self.class.wechat # Make sure user can continue access wechat at instance level similar to class level
     end
 
-    def wechat_oauth2(scope = 'snsapi_base', page_url = nil, &block)
-      appid = self.class.appid || lambda do
-        self.class.wechat # to initialize wechat_api_client at first time call wechat_oauth2
-        self.class.appid
-      end.call
-      raise 'Can not get appid, so please configure it first to using wechat_oauth2' if appid.blank?
+    def wechat_oauth2(scope = 'snsapi_base', page_url, &block)
+      wechat.authorizer_appid = params[:appid]
 
-      wechat.jsapi_ticket.ticket if wechat.jsapi_ticket.oauth2_state.nil?
+      wechat.jsapi_ticket = Ticket::PublicJsapiTicket.new(wechat.component_appid, wechat.authorizer_appid)
+      wechat.jsapi_ticket.ticket # if wechat.jsapi_ticket.oauth2_state.nil?
+      wechat.access_token = Token::PublicAccessToken.new(wechat.component_appid, wechat.authorizer_appid)
+      wechat.access_token.token
+
       oauth2_params = {
-        appid: appid,
+        appid: wechat.authorizer_appid,
         redirect_uri: page_url,
         scope: scope,
         response_type: 'code',
-        state: wechat.jsapi_ticket.oauth2_state
+        state: wechat.jsapi_ticket.oauth2_state,
+        component_appid: wechat.component_appid
       }
 
       return generate_oauth2_url(oauth2_params) unless block_given?
@@ -36,6 +36,7 @@ module Wechat
 
     def wechat_public_oauth2(oauth2_params)
       openid  = cookies.signed_or_encrypted[:we_openid]
+      p "openid #{openid}"
       unionid = cookies.signed_or_encrypted[:we_unionid]
       # wechat_public_oauth2增加token缓存
       we_token = cookies.signed_or_encrypted[:we_access_token]
@@ -43,25 +44,11 @@ module Wechat
         yield openid, { 'openid' => openid, 'unionid' => unionid, 'access_token' => we_token } # wechat_public_oauth2增加token缓存
       elsif params[:code].present? && params[:state] == oauth2_params[:state]
         access_info = wechat.web_access_token(params[:code])
+        p access_info['openid']
         cookies.signed_or_encrypted[:we_openid] = { value: access_info['openid'], expires: self.class.oauth2_cookie_duration.from_now }
         cookies.signed_or_encrypted[:we_unionid] = { value: access_info['unionid'], expires: self.class.oauth2_cookie_duration.from_now }
         cookies.signed_or_encrypted[:we_access_token] = { value: access_info['access_token'], expires: self.class.oauth2_cookie_duration.from_now } # wechat_public_oauth2增加token缓存
         yield access_info['openid'], access_info
-      else
-        redirect_to generate_oauth2_url(oauth2_params)
-      end
-    end
-
-    def wechat_corp_oauth2(oauth2_params)
-      userid   = cookies.signed_or_encrypted[:we_userid]
-      deviceid = cookies.signed_or_encrypted[:we_deviceid]
-      if userid.present? && deviceid.present?
-        yield userid, { 'UserId' => userid, 'DeviceId' => deviceid }
-      elsif params[:code].present? && params[:state] == oauth2_params[:state]
-        userinfo = wechat.getuserinfo(params[:code])
-        cookies.signed_or_encrypted[:we_userid] = { value: userinfo['UserId'], expires: self.class.oauth2_cookie_duration.from_now }
-        cookies.signed_or_encrypted[:we_deviceid] = { value: userinfo['DeviceId'], expires: self.class.oauth2_cookie_duration.from_now }
-        yield userinfo['UserId'], userinfo
       else
         redirect_to generate_oauth2_url(oauth2_params)
       end

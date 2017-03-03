@@ -4,9 +4,7 @@ module Wechat
   module Token
     class PublicAccessToken < AccessTokenBase
       def refresh
-        # data = client.get('token', params: { grant_type: 'client_credential', appid: appid, secret: secret })
-        # write_token_to_store(data)
-        read_token_from_store
+        @access_token = Wechat.redis.hget("wechat_authorizer_access_token_#{component_appid}_#{authorizer_appid}", 'authorizer_access_token')
       end
     end
   end
