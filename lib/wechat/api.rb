@@ -7,7 +7,6 @@ module Wechat
   class Api < ApiBase
     API_BASE = 'https://api.weixin.qq.com/cgi-bin/'.freeze
 
-    # def initialize(component_appid, timeout, skip_verify_ssl, redis_host, redis_port, redis_db)
     def initialize(component_appid, timeout, skip_verify_ssl)
       @component_appid = component_appid
       @client = HttpClient.new(API_BASE, timeout, skip_verify_ssl)

@@ -217,8 +217,6 @@ module Wechat
       post_data = "{\"component_appid\" : \"#{params[:component_appid]}\", \"authorization_code\" : \"#{params[:auth_code]}\"}"
       resp = wechat.client.post("component/api_query_auth?component_access_token=#{component_access_token}", post_data)
       authorization_info_hash = resp['authorization_info']
-      p authorization_info_hash.to_json
-      p authorization_info_hash['authorizer_appid']
       Wechat.redis.set "wechat_authorization_info_#{params[:component_appid]}_#{authorization_info_hash['authorizer_appid']}", authorization_info_hash.to_json
       Wechat.redis.hmset "wechat_authorizer_access_token_#{params[:component_appid]}_#{authorization_info_hash['authorizer_appid']}", "authorizer_access_token", "#{authorization_info_hash['authorizer_access_token']}", "expires_in", "#{authorization_info_hash['expires_in']}", "authorizer_refresh_token", "#{authorization_info_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
     end

@@ -31,9 +31,6 @@ module ActionController
       self.oauth2_cookie_duration = opts[:oauth2_cookie_duration] || Wechat.config(account).oauth2_cookie_duration.to_i.seconds
 
       self.component_appid = opts[:component_appid] || Wechat.config(account).component_appid
-      # self.redis_host = opts[:redis_host] || Wechat.config(account).redis_host
-      # self.redis_port = opts[:redis_port] || Wechat.config(account).redis_port || 6739
-      # self.redis_db = opts[:redis_db] || Wechat.config(account).redis_db || 0
 
       return self.wechat_api_client = Wechat.api if account == :default && opts.empty?
 
