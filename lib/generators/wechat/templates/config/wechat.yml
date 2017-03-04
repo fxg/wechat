@@ -3,20 +3,27 @@ default: &default
   encrypt_mode: false # if true must fill encoding_aes_key
   encoding_aes_key:  "my_encoding_aes_key"
   component_appid: "my_component_appid"
+  component_secret: "my_component_secret"
+  token: "my_token"
+  encrypt_mode: true # must be true must fill encoding_aes_key
+  encoding_aes_key: "my aes key"
+  skip_verify_ssl: true
+  oauth2_cookie_duration: 2
 
 production:
-# using public account, only need above two line
-  secret:     <%= ENV['WECHAT_APP_SECRET'] %>
-  token:      <%%= ENV['WECHAT_TOKEN'] %>
-  timeout:    30,
+  component_appid: <%= ENV['COMPONENT_APPID'] %>
+  component_secret: <%= ENV['COMPONENT_SECRET'] %>
+  token: <%= ENV['WECHAT_TOKEN'] %>
+  timeout: 30,
   skip_verify_ssl: true
-  encrypt_mode: false # if true must fill encoding_aes_key
-  encoding_aes_key:  <%%= ENV['WECHAT_ENCODING_AES_KEY'] %>
-  oauth2_cookie_duration: <%%= ENV['WECHAT_OAUTH2_COOKIE_DURATION'] %> # seconds
+  encrypt_mode: true # if true must fill encoding_aes_key
+  encoding_aes_key: <%= ENV['WECHAT_ENCODING_AES_KEY'] %>
+  trusted_domain_fullname: <%= ENV['TRUSTED_DOMAIN_FULLNAME'] %>
+  oauth2_cookie_duration: <%= ENV['WECHAT_OAUTH2_COOKIE_DURATION'] %> # seconds
 
 development:
   <<: *default
-  trusted_domain_fullname: "http://your_dev.proxy.qqbrowser.cc"
+  trusted_domain_fullname: "trusted_domain_fullname"
 
 test:
   <<: *default

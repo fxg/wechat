@@ -10,7 +10,7 @@ module Wechat
       config_js = <<-WECHAT_CONFIG_JS
 wx.config({
   debug: #{config_options[:debug]},
-  appId: "#{controller.class.appid}",
+  appId: "#{controller.class.authorizer_appid}",
   timestamp: "#{js_hash[:timestamp]}",
   nonceStr: "#{js_hash[:noncestr]}",
   signature: "#{js_hash[:signature]}",

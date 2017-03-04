@@ -11,7 +11,8 @@ module Wechat
       self.class.wechat # Make sure user can continue access wechat at instance level similar to class level
     end
 
-    def wechat_oauth2(scope = 'snsapi_base', page_url, &block)
+    # def wechat_oauth2(scope = 'snsapi_userinfo', page_url, &block)
+    def wechat_oauth2(scope = 'snsapi_base', page_url = nil, &block)
       wechat.authorizer_appid = params[:appid]
 
       wechat.jsapi_ticket = Ticket::PublicJsapiTicket.new(wechat.component_appid, wechat.authorizer_appid)
@@ -24,7 +25,7 @@ module Wechat
         redirect_uri: page_url,
         scope: scope,
         response_type: 'code',
-        state: wechat.jsapi_ticket.oauth2_state,
+        state: '123',# wechat.jsapi_ticket.oauth2_state,
         component_appid: wechat.component_appid
       }
 
@@ -36,7 +37,6 @@ module Wechat
 
     def wechat_public_oauth2(oauth2_params)
       openid  = cookies.signed_or_encrypted[:we_openid]
-      p "openid #{openid}"
       unionid = cookies.signed_or_encrypted[:we_unionid]
       # wechat_public_oauth2增加token缓存
       we_token = cookies.signed_or_encrypted[:we_access_token]
@@ -44,7 +44,6 @@ module Wechat
         yield openid, { 'openid' => openid, 'unionid' => unionid, 'access_token' => we_token } # wechat_public_oauth2增加token缓存
       elsif params[:code].present? && params[:state] == oauth2_params[:state]
         access_info = wechat.web_access_token(params[:code])
-        p access_info['openid']
         cookies.signed_or_encrypted[:we_openid] = { value: access_info['openid'], expires: self.class.oauth2_cookie_duration.from_now }
         cookies.signed_or_encrypted[:we_unionid] = { value: access_info['unionid'], expires: self.class.oauth2_cookie_duration.from_now }
         cookies.signed_or_encrypted[:we_access_token] = { value: access_info['access_token'], expires: self.class.oauth2_cookie_duration.from_now } # wechat_public_oauth2增加token缓存
