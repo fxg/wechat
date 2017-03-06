@@ -3,7 +3,7 @@ require 'securerandom'
 
 module Wechat
   module Ticket
-    class JsapiBase
+    class JsapiTicket
       attr_reader :component_appid, :authorizer_appid, :oauth2_state, :access_ticket
 
       def initialize(component_appid, authorizer_appid)

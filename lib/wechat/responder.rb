@@ -212,11 +212,18 @@ module Wechat
 
     private
 
+    QUERY_PRE_AUTH = 'https://api.weixin.qq.com/cgi-bin/'.freeze
+
     def authorizer_info
-      component_access_token = Wechat.redis.hget("wechat_component_access_token_#{params[:component_appid]}", "component_access_token")
-      post_data = "{\"component_appid\" : \"#{params[:component_appid]}\", \"authorization_code\" : \"#{params[:auth_code]}\"}"
-      resp = wechat.client.post("component/api_query_auth?component_access_token=#{component_access_token}", post_data)
-      authorization_info_hash = resp['authorization_info']
+      url_params = {
+        component_access_token: Token::AccessToken.component_access_token(wechat.component_appid)
+      }
+
+      resp = wechat.client.post("component/api_query_auth", JSON.generate(component_appid: wechat.component_appid, authorization_code: params[:auth_code]), params: url_params, base: QUERY_PRE_AUTH)
+      save_authorization_info(resp['authorization_info'])
+    end
+
+    def save_authorization_info (authorization_info_hash)
       Wechat.redis.set "wechat_authorization_info_#{params[:component_appid]}_#{authorization_info_hash['authorizer_appid']}", authorization_info_hash.to_json
       Wechat.redis.hmset "wechat_authorizer_access_token_#{params[:component_appid]}_#{authorization_info_hash['authorizer_appid']}", "authorizer_access_token", "#{authorization_info_hash['authorizer_access_token']}", "expires_in", "#{authorization_info_hash['expires_in']}", "authorizer_refresh_token", "#{authorization_info_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
     end

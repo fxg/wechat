@@ -1,7 +1,7 @@
 require 'wechat/api_base'
 require 'wechat/http_client'
-require 'wechat/token/public_access_token'
-require 'wechat/ticket/public_jsapi_ticket'
+require 'wechat/token/access_token'
+require 'wechat/ticket/jsapi_ticket'
 
 module Wechat
   class Api < ApiBase
@@ -167,7 +167,7 @@ module Wechat
     OAUTH2_BASE = 'https://api.weixin.qq.com/sns/'.freeze
 
     def web_access_token(code)
-      component_access_token = Wechat.redis.hget("wechat_component_access_token_#{component_appid}", "component_access_token")
+      component_access_token = Token::AccessToken.component_access_token(component_appid)
 
       params = {
         appid: authorizer_appid,

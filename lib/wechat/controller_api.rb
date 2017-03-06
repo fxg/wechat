@@ -15,10 +15,10 @@ module Wechat
     def wechat_oauth2(scope = 'snsapi_base', page_url = nil, &block)
       wechat.authorizer_appid = params[:appid]
 
-      wechat.jsapi_ticket = Ticket::PublicJsapiTicket.new(wechat.component_appid, wechat.authorizer_appid)
+      wechat.jsapi_ticket = Ticket::JsapiTicket.new(wechat.component_appid, wechat.authorizer_appid)
       wechat.jsapi_ticket.ticket # if wechat.jsapi_ticket.oauth2_state.nil?
-      wechat.access_token = Token::PublicAccessToken.new(wechat.component_appid, wechat.authorizer_appid)
-      wechat.access_token.token
+      # wechat.access_token = Token::AccessToken.new(wechat.component_appid, wechat.authorizer_appid)
+      # wechat.access_token.token
 
       oauth2_params = {
         appid: wechat.authorizer_appid,

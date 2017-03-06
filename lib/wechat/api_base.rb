@@ -51,9 +51,8 @@ module Wechat
 
     def with_access_token(params = {}, tries = 2)
       params ||= {}
-      yield(params.merge(access_token: access_token.token))
+      yield(params.merge(access_token: Token::AccessToken.token(component_appid, authorizer_appid)))
     rescue AccessTokenExpiredError
-      access_token.refresh
       retry unless (tries -= 1).zero?
     end
   end

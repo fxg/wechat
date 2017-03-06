@@ -5,7 +5,7 @@ module Wechat
   end
 
   module Token
-    class AccessTokenBase
+    class AccessToken
       def read_token
         JSON.parse(Wechat.redis.get(redis_key)) || {}
       end
