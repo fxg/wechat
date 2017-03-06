@@ -10,6 +10,7 @@ module Wechat
     def initialize(component_appid, timeout, skip_verify_ssl)
       @component_appid = component_appid
       @client = HttpClient.new(API_BASE, timeout, skip_verify_ssl)
+      @access_token = Token::AccessToken.new(component_appid, nil)
     end
 
     def groups
@@ -167,13 +168,13 @@ module Wechat
     OAUTH2_BASE = 'https://api.weixin.qq.com/sns/'.freeze
 
     def web_access_token(code)
-      component_access_token = Token::AccessToken.component_access_token(component_appid)
+      component_access_token = @access_token.component_access_token(@component_appid)
 
       params = {
-        appid: authorizer_appid,
+        appid: @authorizer_appid,
         code: code,
         grant_type: 'authorization_code',
-        component_appid: component_appid,
+        component_appid: @component_appid,
         component_access_token: component_access_token
       }
       client.get 'oauth2/component/access_token', params: params, base: OAUTH2_BASE

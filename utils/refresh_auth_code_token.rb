@@ -2,6 +2,7 @@ require 'mechanize'
 require 'json'
 require 'yaml'
 require 'redis'
+require 'securerandom'
 require_relative 'http_client'
 
 class ComponentAccessToken
@@ -128,7 +129,7 @@ class JsapiTicket
     client = HttpClient.new(API_BASE, 20, true)
     jsapi_ticket_key_hash = client.get("ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
 
-    redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
+    redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
   end
 
   private

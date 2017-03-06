@@ -181,6 +181,7 @@ module Wechat
     def create
       # 设置本次会话的authorizer_appid
       wechat.authorizer_appid = params[:authorizer_appid]
+      # wechat.authorizer_appid = params[:authorizer_appid]
       # 获取或刷新对应authorizer_appid的token
       request_msg = Wechat::Message.from_hash(post_xml)
       response_msg = run_responder(request_msg)
@@ -207,8 +208,13 @@ module Wechat
         Wechat.redis.hmset("wechat_component_verify_ticket_#{wechat.component_appid}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
       end
     ensure
-      render plain: "success"
+      if Rails::VERSION::MAJOR >= 4
+        render plain: "success"
+      else
+        render text: "success"
+      end
     end
+
 
     private
 
@@ -216,7 +222,7 @@ module Wechat
 
     def authorizer_info
       url_params = {
-        component_access_token: Token::AccessToken.component_access_token(wechat.component_appid)
+        component_access_token: Token::AccessToken.new(wechat.component_appid, nil).component_access_token
       }
 
       resp = wechat.client.post("component/api_query_auth", JSON.generate(component_appid: wechat.component_appid, authorization_code: params[:auth_code]), params: url_params, base: QUERY_PRE_AUTH)

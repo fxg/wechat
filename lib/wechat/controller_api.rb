@@ -16,21 +16,34 @@ module Wechat
       wechat.authorizer_appid = params[:appid]
 
       wechat.jsapi_ticket = Ticket::JsapiTicket.new(wechat.component_appid, wechat.authorizer_appid)
-      wechat.jsapi_ticket.ticket # if wechat.jsapi_ticket.oauth2_state.nil?
-      # wechat.access_token = Token::AccessToken.new(wechat.component_appid, wechat.authorizer_appid)
-      # wechat.access_token.token
+      wechat.jsapi_ticket.ticket if wechat.jsapi_ticket.oauth2_state.nil?
+
+      wechat.access_token = Token::AccessToken.new(wechat.component_appid, wechat.authorizer_appid)
 
       oauth2_params = {
         appid: wechat.authorizer_appid,
         redirect_uri: page_url,
         scope: scope,
         response_type: 'code',
-        state: '123',# wechat.jsapi_ticket.oauth2_state,
+        state: wechat.jsapi_ticket.oauth2_state,
         component_appid: wechat.component_appid
       }
 
       return generate_oauth2_url(oauth2_params) unless block_given?
       wechat_public_oauth2(oauth2_params, &block)
+    end
+
+    def wechat_authorize_page(callback_path = nil)
+      callback_path = '/wx/auth' if callback_path.blank?
+
+      authorization_params =
+      {
+        component_appid: wechat.component_appid,
+        pre_auth_code: wechat.access_token.pre_auth_code,
+        redirect_uri: "#{self.class.trusted_domain_fullname}#{callback_path}?component_appid=#{wechat.component_appid}"
+      }
+
+      redirect_to "https://mp.weixin.qq.com/cgi-bin/componentloginpage?#{authorization_params.to_query}"
     end
 
     private
@@ -66,5 +79,19 @@ module Wechat
         "https://open.weixin.qq.com/connect/oauth2/authorize?#{oauth2_params.to_query}#wechat_redirect"
       end
     end
+
+    # def generate_authorization_url(callback_page)
+    #   if oauth2_params[:redirect_uri].blank?
+    #     page_url = (td = self.class.trusted_domain_fullname) ? "#{td}#{request.original_fullpath}" : request.original_url
+    #     safe_query = request.query_parameters.reject { |k, _| %w(code state access_token).include? k }.to_query
+    #     oauth2_params[:redirect_uri] = page_url.sub(request.query_string, safe_query)
+    #   end
+    #
+    #   if oauth2_params[:scope] == 'snsapi_login'
+    #     "https://open.weixin.qq.com/connect/qrconnect?#{oauth2_params.to_query}#wechat_redirect"
+    #   else
+    #     "https://open.weixin.qq.com/connect/oauth2/authorize?#{oauth2_params.to_query}#wechat_redirect"
+    #   end
+    # end
   end
 end

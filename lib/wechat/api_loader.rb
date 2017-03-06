@@ -40,12 +40,12 @@ HELP
         end
       end
 
-      if defined?(::Rails)
-        configs.each do |_, cfg|
-          cfg[:access_token] ||= Rails.root.try(:join, "tmp/access_token_#{cfg[:appid]}").try(:to_path)
-          cfg[:jsapi_ticket] ||= Rails.root.try(:join, "tmp/jsapi_ticket_#{cfg[:component_appid]}").try(:to_path)
-        end
-      end
+      # if defined?(::Rails)
+      #   configs.each do |_, cfg|
+      #     cfg[:access_token] ||= Rails.root.try(:join, "tmp/access_token_#{cfg[:appid]}").try(:to_path)
+      #     cfg[:jsapi_ticket] ||= Rails.root.try(:join, "tmp/jsapi_ticket_#{cfg[:component_appid]}").try(:to_path)
+      #   end
+      # end
 
       configs.each do |_, cfg|
         cfg[:timeout] ||= 20
@@ -115,9 +115,7 @@ HELP
         timeout: ENV['WECHAT_TIMEOUT'],
         skip_verify_ssl: ENV['WECHAT_SKIP_VERIFY_SSL'],
         encoding_aes_key: ENV['WECHAT_ENCODING_AES_KEY'],
-        trusted_domain_fullname: ENV['WECHAT_TRUSTED_DOMAIN_FULLNAME'],
-        redis_host: ENV['WECHAT_REDIS_HOST'],
-        redis_port: ENV['WECHAT_REDIS_POST']}
+        trusted_domain_fullname: ENV['WECHAT_TRUSTED_DOMAIN_FULLNAME']}
       {default: value}
     end
 

@@ -4,18 +4,16 @@ require 'securerandom'
 module Wechat
   module Ticket
     class JsapiTicket
-      attr_reader :component_appid, :authorizer_appid, :oauth2_state, :access_ticket
+      attr_reader :oauth2_state, :access_ticket
 
       def initialize(component_appid, authorizer_appid)
-        @component_appid = component_appid
-        @authorizer_appid = authorizer_appid
-        @random_generator = Random.new
+        @component_appid ||= component_appid
+        @authorizer_appid ||= authorizer_appid
       end
 
       def ticket(tries = 2)
-        # Possible two worker running, one worker refresh ticket, other unaware, so must read every time
-        @oauth2_state = SecureRandom.hex(16)
-        @access_ticket = Wechat.redis.hget("jsapi_ticket_key_#{component_appid}_#{authorizer_appid}", 'ticket')
+        @oauth2_state = Wechat.redis.hget("jsapi_ticket_key_#{@component_appid}_#{@authorizer_appid}", 'oauth2_state')
+        @access_ticket = Wechat.redis.hget("jsapi_ticket_key_#{@component_appid}_#{@authorizer_appid}", 'ticket')
       rescue
         retry unless (tries -= 1).zero?
       end
@@ -29,7 +27,6 @@ module Wechat
       #    signature: signature
       #  }
       def signature(url)
-        p "jsapi ticket: #{ticket}"
         params = {
           noncestr: SecureRandom.base64(16),
           timestamp: Time.now.to_i,

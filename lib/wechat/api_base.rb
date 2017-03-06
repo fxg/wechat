@@ -1,7 +1,7 @@
 module Wechat
   class ApiBase
-    attr_reader :client, :component_appid
-    attr_accessor :authorizer_appid, :access_token, :jsapi_ticket
+    attr_reader :client
+    attr_accessor :component_appid, :authorizer_appid, :access_token, :jsapi_ticket
 
     MP_BASE = 'https://mp.weixin.qq.com/cgi-bin/'.freeze
 
@@ -51,7 +51,7 @@ module Wechat
 
     def with_access_token(params = {}, tries = 2)
       params ||= {}
-      yield(params.merge(access_token: Token::AccessToken.token(component_appid, authorizer_appid)))
+      yield(params.merge(access_token: access_token.token))
     rescue AccessTokenExpiredError
       retry unless (tries -= 1).zero?
     end

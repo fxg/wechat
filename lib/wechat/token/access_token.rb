@@ -1,14 +1,27 @@
 module Wechat
   module Token
-    module AccessToken
-      def self.token(component_appid, authorizer_appid, tries = 2)
-        Wechat.redis.hget("wechat_authorizer_access_token_#{component_appid}_#{authorizer_appid}", 'authorizer_access_token')
+    class AccessToken
+      # attr_reader :access_token, :component_access_token, :pre_auth_cod
+
+      def initialize(component_appid, authorizer_appid)
+        @component_appid ||= component_appid
+        @authorizer_appid ||= authorizer_appid
+      end
+
+      def token(tries = 2)
+        Wechat.redis.hget("wechat_authorizer_access_token_#{@component_appid}_#{@authorizer_appid}", 'authorizer_access_token')
       rescue
         retry unless (tries -= 1).zero?
       end
 
-      def self.component_access_token(component_appid, tries = 2)
-        Wechat.redis.hget("wechat_component_access_token_#{component_appid}", 'component_access_token')
+      def component_access_token(tries = 2)
+        Wechat.redis.hget("wechat_component_access_token_#{@component_appid}", 'component_access_token')
+      rescue
+        retry unless (tries -= 1).zero?
+      end
+
+      def pre_auth_code(tries = 2)
+        Wechat.redis.hget("wechat_pre_auth_code_#{@component_appid}", 'pre_auth_code')
       rescue
         retry unless (tries -= 1).zero?
       end
