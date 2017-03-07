@@ -202,10 +202,11 @@ module Wechat
     end
 
     def auth
+      p post_xml
       info_type = post_xml[:InfoType].to_sym
       case info_type
       when :component_verify_ticket
-        Wechat.redis.hmset("wechat_component_verify_ticket_#{wechat.component_appid}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
+        Wechat.redis.hmset("wechat_component_verify_ticket_#{post_xml['AppId']}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
       end
     ensure
       if Rails::VERSION::MAJOR >= 4
