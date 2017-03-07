@@ -167,8 +167,8 @@ end
 app_config = {"wxe896c42595e407f0" => "0d9eb3bedb6e83e6250ee9991d75194e"}
 
 # 读取redis配置文件:config/redis.conf
-config_file = '/Users/fengxinguo/projects/test/wechattest/config/redis.yml'
-env = 'default'
+config_file = ARGV[0] # 文件全路径
+env = ARGV[1] # 模式名
 configs = resovle_config_file(config_file, env)
 config_hash = configs[env.to_sym]
 
