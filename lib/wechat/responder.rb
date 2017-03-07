@@ -179,9 +179,9 @@ module Wechat
     end
 
     def create
-      # 设置本次会话的authorizer_appid
+      # 设置本次会话的授权应用appid：authorizer_appid
+      # wechat.authorizer_appid = request.subdomain(2)
       wechat.authorizer_appid = params[:authorizer_appid]
-      # wechat.authorizer_appid = params[:authorizer_appid]
       # 获取或刷新对应authorizer_appid的token
       request_msg = Wechat::Message.from_hash(post_xml)
       response_msg = run_responder(request_msg)

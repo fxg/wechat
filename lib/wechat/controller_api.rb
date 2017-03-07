@@ -13,7 +13,7 @@ module Wechat
 
     # def wechat_oauth2(scope = 'snsapi_userinfo', page_url, &block)
     def wechat_oauth2(scope = 'snsapi_base', page_url = nil, &block)
-      wechat.authorizer_appid = params[:appid]
+      wechat.authorizer_appid = request.subdomains(2)[0]
 
       wechat.jsapi_ticket = Ticket::JsapiTicket.new(wechat.component_appid, wechat.authorizer_appid)
       wechat.jsapi_ticket.ticket if wechat.jsapi_ticket.oauth2_state.nil?
@@ -79,19 +79,5 @@ module Wechat
         "https://open.weixin.qq.com/connect/oauth2/authorize?#{oauth2_params.to_query}#wechat_redirect"
       end
     end
-
-    # def generate_authorization_url(callback_page)
-    #   if oauth2_params[:redirect_uri].blank?
-    #     page_url = (td = self.class.trusted_domain_fullname) ? "#{td}#{request.original_fullpath}" : request.original_url
-    #     safe_query = request.query_parameters.reject { |k, _| %w(code state access_token).include? k }.to_query
-    #     oauth2_params[:redirect_uri] = page_url.sub(request.query_string, safe_query)
-    #   end
-    #
-    #   if oauth2_params[:scope] == 'snsapi_login'
-    #     "https://open.weixin.qq.com/connect/qrconnect?#{oauth2_params.to_query}#wechat_redirect"
-    #   else
-    #     "https://open.weixin.qq.com/connect/oauth2/authorize?#{oauth2_params.to_query}#wechat_redirect"
-    #   end
-    # end
   end
 end
