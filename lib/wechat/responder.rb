@@ -202,7 +202,6 @@ module Wechat
     end
 
     def auth
-      p post_xml
       info_type = post_xml[:InfoType].to_sym
       case info_type
       when :component_verify_ticket
