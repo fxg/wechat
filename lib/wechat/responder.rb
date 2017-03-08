@@ -63,7 +63,6 @@ module Wechat
         else
           user_defined_responders(message_type) << config
         end
-
         config
       end
 
@@ -180,9 +179,9 @@ module Wechat
 
     def create
       # 设置本次会话的授权应用appid：authorizer_appid
-      # wechat.authorizer_appid = request.subdomain(2)
       wechat.authorizer_appid = params[:authorizer_appid]
       # 获取或刷新对应authorizer_appid的token
+
       request_msg = Wechat::Message.from_hash(post_xml)
       response_msg = run_responder(request_msg)
 
@@ -196,7 +195,7 @@ module Wechat
         head :ok, content_type: 'text/html'
       end
 
-      response_msg.save_session if response_msg.is_a?(Wechat::Message) && Wechat.config.have_session_class
+      response_msg.save_session if response_msg.is_a?(Wechat::Message)
 
       ActiveSupport::Notifications.instrument 'wechat.responder.after_create', request: request_msg, response: response_msg
     end
@@ -271,7 +270,6 @@ module Wechat
     def run_responder(request)
       self.class.responder_for(request) do |responder, *args|
         responder ||= self.class.user_defined_responders(:fallback).first
-
         next if responder.nil?
         case
         when responder[:respond]

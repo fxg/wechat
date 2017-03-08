@@ -1,33 +1,27 @@
 default: &default
-  token: "my_token"
-  encrypt_mode: false # if true must fill encoding_aes_key
-  encoding_aes_key:  "my_encoding_aes_key"
-  component_appid: "my_component_appid"
-  component_secret: "my_component_secret"
-  token: "my_token"
   encrypt_mode: true # must be true must fill encoding_aes_key
-  encoding_aes_key: "my aes key"
   skip_verify_ssl: true
-  oauth2_cookie_duration: 2
+  oauth2_cookie_duration: 7200 # seconds
 
-production:
-  component_appid: <%= ENV['COMPONENT_APPID'] %>
-  component_secret: <%= ENV['COMPONENT_SECRET'] %>
-  token: <%= ENV['WECHAT_TOKEN'] %>
-  timeout: 30,
-  skip_verify_ssl: true
-  encrypt_mode: true # if true must fill encoding_aes_key
-  encoding_aes_key: <%= ENV['WECHAT_ENCODING_AES_KEY'] %>
-  # trusted_domain_fullname: <%= ENV['TRUSTED_DOMAIN_FULLNAME'] %>
-  oauth2_cookie_duration: <%= ENV['WECHAT_OAUTH2_COOKIE_DURATION'] %> # seconds
 
 development:
-  <<: *default
+  token: "my_token"
+  encoding_aes_key:  "my_encoding_aes_key"
+  component_appid: "my_component_appid"
   # trusted_domain_fullname: "trusted_domain_fullname" # 腾讯推荐授权域名为根据授权appid动态产生，不需要设置
 
 test:
   <<: *default
+  token: "my_token"
+  encoding_aes_key:  "my_encoding_aes_key"
+  component_appid: "my_component_appid"
 
+production:
+  <<: *default
+  component_appid: <%= ENV['COMPONENT_APPID'] %>
+  token: <%= ENV['WECHAT_TOKEN'] %>
+  timeout: 30,
+  encoding_aes_key: <%= ENV['WECHAT_ENCODING_AES_KEY'] %>
 # Multiple Accounts
 #
 # wx2_development:

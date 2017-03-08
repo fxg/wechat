@@ -5,12 +5,9 @@ module Wechat
       c = ApiLoader.config(account)
 
       component_appid = options[:component_appid] || c.component_appid
-      # redis_host = options[:redis_host] || c.redis_host
-      # redis_port = options[:redis_port] || c.redis_port || 6739
-      # redis_db = options[:redis_db] || c.redis_db || 0
 
-      if c.component_appid
-        Wechat::Api.new(component_appid, c.timeout, c.skip_verify_ssl) # , redis_host, redis_port, redis_db
+      if component_appid
+        Wechat::Api.new(component_appid, c.timeout, c.skip_verify_ssl)
       else
         puts <<-HELP
 Need create ~/.wechat.yml with wechat appid and secret
@@ -75,7 +72,7 @@ HELP
           end
           rails_env = ENV['RAILS_ENV'] || 'development'
           config = resovle_config_file(rails_config_file, rails_env)
-          if config.present? && (default = config[:default])  && (default['appid'])
+          if config.present? && (default = config[:default]) && (default['component_appid'])
             puts "Using rails project #{ENV['WECHAT_CONF_FILE'] || "config/wechat.yml"} #{rails_env} setting..."
             return config
           end

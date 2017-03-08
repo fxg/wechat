@@ -34,7 +34,7 @@ module ActionController
 
       return self.wechat_api_client = Wechat.api if account == :default && opts.empty?
 
-      Wechat::Api.new(component_appid, c.timeout, c.skip_verify_ssl) # , redis_host, redis_port, redis_db
+      Wechat::Api.new(component_appid, timeout, skip_verify_ssl)
     end
   end
 
