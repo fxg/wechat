@@ -214,6 +214,16 @@ module Wechat
       end
     end
 
+    def auth_callback(callback_uri = nil)
+      # 获取授权信息并展示，然后跳转到其他页面.
+      authorizer_info
+
+      if callback_uri.nil?
+        render plain: "authorize ok!"
+      else
+        redirect_to "#{request.protocol}#{request.host}#{callback_uri}"
+      end
+    end
 
     private
 
