@@ -12,8 +12,8 @@ module Wechat
       end
 
       def ticket(tries = 2)
-        @oauth2_state = Wechat.redis.hget("jsapi_ticket_key_#{@component_appid}_#{@authorizer_appid}", 'oauth2_state')
-        @access_ticket = Wechat.redis.hget("jsapi_ticket_key_#{@component_appid}_#{@authorizer_appid}", 'ticket')
+        @oauth2_state = Wechat.redis.hget("wechat_jsapi_ticket_key_#{@component_appid}_#{@authorizer_appid}", 'oauth2_state')
+        @access_ticket = Wechat.redis.hget("wechat_jsapi_ticket_key_#{@component_appid}_#{@authorizer_appid}", 'ticket')
       rescue
         retry unless (tries -= 1).zero?
       end

@@ -118,7 +118,7 @@ class JsapiTicket
 
   def initialize(redis, component_appid, authorizer_appid)
     @redis = redis
-    @jsapi_ticket_key = "jsapi_ticket_key_#{component_appid}_#{authorizer_appid}"
+    @jsapi_ticket_key = "wechat_jsapi_ticket_key_#{component_appid}_#{authorizer_appid}"
     @authorizer_access_token_key = "wechat_authorizer_access_token_#{component_appid}_#{authorizer_appid}"
   end
 
