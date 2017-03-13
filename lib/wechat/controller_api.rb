@@ -12,8 +12,8 @@ module Wechat
     end
 
     # def wechat_oauth2(scope = 'snsapi_userinfo', page_url, &block)
-    def wechat_oauth2(scope = 'snsapi_base', page_url = nil, &block)
-      wechat.authorizer_appid = request.subdomains(2)[0]
+    def wechat_oauth2(scope = 'snsapi_base', authorizer_appid = request.subdomains(2)[0], page_url = nil, &block)
+      wechat.authorizer_appid = authorizer_appid
 
       wechat.jsapi_ticket = Ticket::JsapiTicket.new(wechat.component_appid, wechat.authorizer_appid)
       wechat.jsapi_ticket.ticket if wechat.jsapi_ticket.oauth2_state.nil?
@@ -39,7 +39,7 @@ module Wechat
       else
         callback_path = "#{request.protocol}#{request.host}#{callback_uri}"
       end
-      
+
       authorization_params =
       {
         component_appid: wechat.component_appid,
