@@ -235,6 +235,7 @@ module Wechat
       }
 
       resp = wechat.client.post("component/api_query_auth", JSON.generate(component_appid: wechat.component_appid, authorization_code: params[:auth_code]), params: url_params, base: QUERY_PRE_AUTH)
+
       save_authorization_info(resp['authorization_info'])
     end
 

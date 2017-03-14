@@ -12,8 +12,8 @@ module Wechat
     end
 
     # def wechat_oauth2(scope = 'snsapi_userinfo', page_url, &block)
-    def wechat_oauth2(scope = 'snsapi_base', authorizer_appid = request.subdomains(2)[0], page_url = nil, &block)
-      wechat.authorizer_appid = authorizer_appid
+    def wechat_oauth2(scope = 'snsapi_base', page_url = nil, &block)
+      wechat.authorizer_appid = request.subdomains(2)[0]
 
       wechat.jsapi_ticket = Ticket::JsapiTicket.new(wechat.component_appid, wechat.authorizer_appid)
       wechat.jsapi_ticket.ticket if wechat.jsapi_ticket.oauth2_state.nil?
@@ -40,10 +40,16 @@ module Wechat
         callback_path = "#{request.protocol}#{request.host}#{callback_uri}"
       end
 
+      # refresh pre auth code
+      pre_auth_code_params = {
+        component_appid: wechat.component_appid
+      }
+      pre_auth_code_hash = wechat.client.post("component/api_create_preauthcode", JSON.generate(pre_auth_code_params), params: {component_access_token: wechat.access_token.component_access_token})
+
       authorization_params =
       {
         component_appid: wechat.component_appid,
-        pre_auth_code: wechat.access_token.pre_auth_code,
+        pre_auth_code: pre_auth_code_hash['pre_auth_code'],
         redirect_uri: "#{callback_path}?component_appid=#{wechat.component_appid}"
       }
 

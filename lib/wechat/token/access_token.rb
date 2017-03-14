@@ -19,12 +19,6 @@ module Wechat
       rescue
         retry unless (tries -= 1).zero?
       end
-
-      def pre_auth_code(tries = 2)
-        Wechat.redis.hget("wechat_pre_auth_code_#{@component_appid}", 'pre_auth_code')
-      rescue
-        retry unless (tries -= 1).zero?
-      end
     end
   end
 end

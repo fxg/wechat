@@ -23,9 +23,15 @@ class ComponentAccessToken
     component_verify_ticket = redis.hget component_verify_ticket_key, "ComponentVerifyTicket"
 
     client = HttpClient.new(API_BASE, 20, true)
-    post_data = "{\"component_appid\" : \"#{component_appid}\", \"component_appsecret\" : \"#{component_appsecret}\", \"component_verify_ticket\" : \"#{component_verify_ticket}\"}"
 
-    component_access_token_hash = client.post('component/api_component_token', post_data)
+    component_verify_ticket_params = {
+      component_appid: component_appid,
+      component_appsecret: component_appsecret,
+      component_verify_ticket: component_verify_ticket
+    }
+    # post_data = "{\"component_appid\" : \"#{component_appid}\", \"component_appsecret\" : \"#{component_appsecret}\", \"component_verify_ticket\" : \"#{component_verify_ticket}\"}"
+
+    component_access_token_hash = client.post('component/api_component_token', JSON.generate(component_verify_ticket_params))
 
     redis.hmset component_access_token_key, "component_access_token", "#{component_access_token_hash['component_access_token']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{component_access_token_hash['expires_in']}"
   end
@@ -38,42 +44,6 @@ class ComponentAccessToken
 
     got_token_at, expires_in = redis.hmget component_access_token_key, "got_token_at", "expires_in"
     true if ((Time.now.to_i - got_token_at.to_i) >= (expires_in.to_i - 30*60))
-  end
-end
-
-class PreAuthCode
-  attr_reader :redis, :component_appid, :component_access_token_key, :pre_auth_code_key
-  API_BASE = 'https://api.weixin.qq.com/cgi-bin/'.freeze
-
-  def initialize(redis, component_appid)
-    @redis = redis
-    @component_appid = component_appid
-    @pre_auth_code_key = "wechat_pre_auth_code_#{component_appid}"
-    @component_access_token_key = "wechat_component_access_token_#{component_appid}"
-  end
-
-  def refresh
-    # exit unless expires?
-    # 获取component_verify_ticket
-    component_access_token = redis.hget component_access_token_key, "component_access_token"
-
-    client = HttpClient.new(API_BASE, 20, true)
-    post_data = "{\"component_appid\" : \"#{component_appid}\"}"
-
-    pre_auth_code_hash = client.post("component/api_create_preauthcode?component_access_token=#{component_access_token}", post_data)
-
-    redis.hmset pre_auth_code_key, "pre_auth_code", "#{pre_auth_code_hash['pre_auth_code']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{pre_auth_code_hash['expires_in']}"
-  end
-
-  private
-
-  def expires?
-    return true
-    return false unless redis.exists(component_access_token_key)
-    return true unless redis.exists(pre_auth_code_key)
-
-    got_token_at, expires_in = redis.hmget pre_auth_code_key, "got_token_at", "expires_in"
-    true if ((Time.now.to_i - got_token_at.to_i) >= (expires_in.to_i - 10*60))
   end
 end
 
@@ -95,9 +65,14 @@ class AuthorizerAccessToken
     authorizer_refresh_token = redis.hget authorizer_access_token_key, "authorizer_refresh_token"
 
     client = HttpClient.new(API_BASE, 20, true)
-    post_data = "{\"component_appid\" : \"#{component_appid}\", \"authorizer_appid\" : \"#{authorizer_appid}\", \"authorizer_refresh_token\" : \"#{authorizer_refresh_token}\"}"
+    authorizer_access_token_params = {
+      component_appid: component_appid,
+      authorizer_appid: authorizer_appid,
+      authorizer_refresh_token: authorizer_refresh_token
+    }
+    # post_data = "{\"component_appid\" : \"#{component_appid}\", \"authorizer_appid\" : \"#{authorizer_appid}\", \"authorizer_refresh_token\" : \"#{authorizer_refresh_token}\"}"
 
-    authorizer_access_token_hash = client.post("component/api_authorizer_token?component_access_token=#{component_access_token}", post_data)
+    authorizer_access_token_hash = client.post("component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
 
     redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
   end
@@ -184,7 +159,6 @@ wechat_keys.each do |key|
   next if app_config["#{component_appid}"].nil?
 
   ComponentAccessToken.new(redis_cli, component_appid, app_config["#{component_appid}"]).refresh
-  PreAuthCode.new(redis_cli, component_appid).refresh
 
   # 刷新auth_access_token,refresh_toekn
   auth_app_keys = redis_cli.keys "wechat_authorization_info_#{component_appid}_*"
