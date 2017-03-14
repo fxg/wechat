@@ -6,11 +6,13 @@ module Wechat
                  else
                   controller.request.original_url
                  end
-      js_hash = controller.wechat.jsapi_ticket.signature(page_url)
+      # js_hash = controller.wechat.jsapi_ticket.signature(page_url)
+      js_hash = Ticket::JsapiTicket.new(controller.wechat.component_appid, config_options[:appid]).signature(page_url)
+      
       config_js = <<-WECHAT_CONFIG_JS
 wx.config({
   debug: #{config_options[:debug]},
-  appId: "#{controller.wechat.authorizer_appid}",
+  appId: "#{config_options[:appid]}",
   timestamp: "#{js_hash[:timestamp]}",
   nonceStr: "#{js_hash[:noncestr]}",
   signature: "#{js_hash[:signature]}",
