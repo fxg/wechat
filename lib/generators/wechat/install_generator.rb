@@ -20,6 +20,7 @@ module Wechat
         post 'wx/:authorizer_appid/callback', to: 'wechats#create'
         get 'wx/auth', to: 'wechats#auth_callback'
         post 'wx/auth', to: 'wechats#auth'
+        get 'wechatauth/authorize_page'
       end
 
       def copy_wechat_controller
