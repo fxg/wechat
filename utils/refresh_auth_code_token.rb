@@ -29,8 +29,6 @@ class ComponentAccessToken
       component_appsecret: component_appsecret,
       component_verify_ticket: component_verify_ticket
     }
-    # post_data = "{\"component_appid\" : \"#{component_appid}\", \"component_appsecret\" : \"#{component_appsecret}\", \"component_verify_ticket\" : \"#{component_verify_ticket}\"}"
-
     component_access_token_hash = client.post('component/api_component_token', JSON.generate(component_verify_ticket_params))
 
     redis.hmset component_access_token_key, "component_access_token", "#{component_access_token_hash['component_access_token']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{component_access_token_hash['expires_in']}"
@@ -70,8 +68,6 @@ class AuthorizerAccessToken
       authorizer_appid: authorizer_appid,
       authorizer_refresh_token: authorizer_refresh_token
     }
-    # post_data = "{\"component_appid\" : \"#{component_appid}\", \"authorizer_appid\" : \"#{authorizer_appid}\", \"authorizer_refresh_token\" : \"#{authorizer_refresh_token}\"}"
-
     authorizer_access_token_hash = client.post("component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
 
     redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
@@ -139,7 +135,7 @@ def resovle_config_file(config_file, env)
   end
 end
 
-app_config = {"wxe896c42595e407f0" => "0d9eb3bedb6e83e6250ee9991d75194e"}
+app_config = {"component_appid" => "component_appsecret"}
 
 # 读取redis配置文件:config/redis.conf
 config_file = ARGV[0] # 文件全路径
@@ -147,7 +143,7 @@ env = ARGV[1] # 模式名
 configs = resovle_config_file(config_file, env)
 config_hash = configs[env.to_sym]
 
-redis_cli = Redis.new(:host => config_hash['host'], :port => config_hash['port'], :db => 0)
+redis_cli = Redis.new(:host => config_hash['host'], :port => config_hash['port'], :db => config_hash['db'] || 0)
 
 wechat_keys = redis_cli.keys "wechat_component_verify_ticket_*"
 wechat_keys.each do |key|

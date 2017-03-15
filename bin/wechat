@@ -14,19 +14,45 @@ require 'fileutils'
 require 'yaml'
 require 'wechat/api_loader'
 require 'cgi'
+require 'Redis'
+
+module Wechat
+  module Token
+    class AccessToken
+      attr_accessor :redis
+      def token
+        @redis.hget("wechat_authorizer_access_token_#{@component_appid}_#{@authorizer_appid}", 'authorizer_access_token')
+      end
+
+      def component_access_token
+        @redis.hget("wechat_component_access_token_#{@component_appid}", 'component_access_token')
+      end
+    end
+  end
+end
 
 class App < Thor
   package_name 'Wechat'
   class_option :account, aliases: '-a', default: :default, desc: 'Name of Wechat account configuration.'
 
+  class_option :authorizer_appid, aliases: '-u', desc: 'authorizer appid'
+  class_option :redis_host, aliases: '-h', desc: 'redis host'
+  class_option :redis_port, aliases: '-p', desc: 'redis port'
+  class_option :redis_db, aliases: '-d', desc: 'redis db'
+
   attr_reader :wechat_api_client
   no_commands do
     def wechat_api
-      @wechat_api_client ||= Wechat::ApiLoader.with(options)
+      @wechat_api_client ||= Wechat::ApiLoader.with(:account => options['account'])
+
+      access_token = Wechat::Token::AccessToken.new(@wechat_api_client.component_appid, options['authorizer_appid'])
+      access_token.redis = Redis.new(:host => options['redis_host'] || '127.0.0.1', :port => options['redis_port'] || 6379, :db => options['redis_db'] || 0)
+
+      @wechat_api_client.access_token = access_token
+      @wechat_api_client
     end
   end
 
-  option :token_file, aliases: '-t', desc: 'File to store access token'
   desc 'callbackip', '获取微信服务器IP地址'
   def callbackip
     puts wechat_api.callbackip

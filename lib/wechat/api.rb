@@ -186,7 +186,7 @@ module Wechat
 
     def web_refresh_access_token(user_refresh_token)
       params = {
-        appid: authorizer_appid,
+        appid: @authorizer_appid,
         grant_type: 'refresh_token',
         refresh_token: user_refresh_token
       }

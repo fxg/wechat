@@ -6,14 +6,30 @@ module Wechat
 
       def copy_config
         template 'config/wechat.yml'
+        template 'config/redis.yml'
+      end
+
+      def copy_wechat_redis_initializer
+        template 'config/initializers/redis.rb'
+        template 'config/initializers/wechat_redis_store.rb'
       end
 
       def add_wechat_route
-        route 'resource :wechat, only: [:show, :create]'
+        # route 'resource :wechat, only: [:show, :create]'
+        get 'wx/:authorizer_appid/callback', to: 'wechats#show'
+        post 'wx/:authorizer_appid/callback', to: 'wechats#create'
+        get 'wx/auth', to: 'wechats#auth_callback'
+        post 'wx/auth', to: 'wechats#auth'
       end
 
       def copy_wechat_controller
         template 'app/controllers/wechats_controller.rb'
+      end
+
+      def add_redis_gem
+        gem 'redis'
+        gem 'redis-objects'
+        gem 'connection_pool'
       end
     end
   end
