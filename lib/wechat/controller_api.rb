@@ -33,11 +33,10 @@ module Wechat
       wechat_public_oauth2(oauth2_params, &block)
     end
 
-    def wechat_authorize_page(callback_uri = nil)
-      if callback_uri.nil?
-        callback_path = "#{request.protocol}#{request.host}/wx/auth"
-      else
-        callback_path = "#{request.protocol}#{request.host}#{callback_uri}"
+    def wechat_authorize_page(component_redirect_uri = nil)
+      redirect_uri = "#{request.protocol}#{request.host}/wx/auth"
+      unless component_redirect_uri.nil?
+        redirect_uri = "#{redirect_uri}?component_redirect_uri=#{URI.encode(component_redirect_uri)}"
       end
 
       # refresh pre auth code
@@ -50,7 +49,7 @@ module Wechat
       {
         component_appid: wechat.component_appid,
         pre_auth_code: pre_auth_code_hash['pre_auth_code'],
-        redirect_uri: "#{callback_path}?component_appid=#{wechat.component_appid}"
+        redirect_uri: redirect_uri
       }
 
       redirect_to "https://mp.weixin.qq.com/cgi-bin/componentloginpage?#{authorization_params.to_query}"

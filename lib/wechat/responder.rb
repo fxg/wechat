@@ -202,9 +202,14 @@ module Wechat
 
     def auth
       info_type = post_xml[:InfoType].to_sym
+      auth_header = "wechat_#{info_type}_"
       case info_type
       when :component_verify_ticket
-        Wechat.redis.hmset("wechat_component_verify_ticket_#{post_xml['AppId']}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
+        Wechat.redis.hmset("#{auth_header}#{post_xml['AppId']}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
+      when :unauthorized
+        Wechat.redis.hmset("#{auth_header}#{post_xml['AppId']}_#{post_xml['AuthorizerAppid']}", "CreateTime", "#{post_xml['CreateTime']}")
+      when :authorized, :updateauthorized
+        Wechat.redis.hmset("#{auth_header}#{post_xml['AppId']}_#{post_xml['AuthorizerAppid']}", "CreateTime", "#{post_xml['CreateTime']}", "AuthorizationCode", "#{post_xml['AuthorizationCode']}", "AuthorizationCodeExpiredTime", "#{post_xml['AuthorizationCodeExpiredTime']}")
       end
     ensure
       if Rails::VERSION::MAJOR >= 4
@@ -214,14 +219,14 @@ module Wechat
       end
     end
 
-    def auth_callback(callback_uri = nil)
+    def auth_callback
       # 获取授权信息并展示，然后跳转到其他页面.
-      authorizer_info
+      component_appid, authorizer_appid = authorizer_info
 
-      if callback_uri.nil?
+      if params[:component_redirect_uri].nil?
         render plain: "authorize ok!"
       else
-        redirect_to "#{request.protocol}#{request.host}#{callback_uri}"
+        redirect_to "#{params[:component_redirect_uri]}?component_appid=#{component_appid}&authorizer_appid=#{authorizer_appid}"
       end
     end
 
@@ -231,17 +236,16 @@ module Wechat
 
     def authorizer_info
       url_params = {
-        component_access_token: Token::AccessToken.new(wechat.component_appid, nil).component_access_token
+        component_access_token: Token::AccessToken.new(wechat.component_appid).component_access_token
       }
 
       resp = wechat.client.post("component/api_query_auth", JSON.generate(component_appid: wechat.component_appid, authorization_code: params[:auth_code]), params: url_params, base: QUERY_PRE_AUTH)
 
-      save_authorization_info(resp['authorization_info'])
-    end
+      authorization_info_hash = resp['authorization_info']
+      Wechat.redis.set "wechat_authorization_info_#{wechat.component_appid}_#{authorization_info_hash['authorizer_appid']}", authorization_info_hash.to_json
+      Wechat.redis.hmset "wechat_authorizer_access_token_#{wechat.component_appid}_#{authorization_info_hash['authorizer_appid']}", "authorizer_access_token", "#{authorization_info_hash['authorizer_access_token']}", "expires_in", "#{authorization_info_hash['expires_in']}", "authorizer_refresh_token", "#{authorization_info_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
 
-    def save_authorization_info (authorization_info_hash)
-      Wechat.redis.set "wechat_authorization_info_#{params[:component_appid]}_#{authorization_info_hash['authorizer_appid']}", authorization_info_hash.to_json
-      Wechat.redis.hmset "wechat_authorizer_access_token_#{params[:component_appid]}_#{authorization_info_hash['authorizer_appid']}", "authorizer_access_token", "#{authorization_info_hash['authorizer_access_token']}", "expires_in", "#{authorization_info_hash['expires_in']}", "authorizer_refresh_token", "#{authorization_info_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
+      [ wechat.component_appid, authorization_info_hash['authorizer_appid'] ]
     end
 
     def verify_signature

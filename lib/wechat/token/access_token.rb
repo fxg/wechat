@@ -3,7 +3,7 @@ module Wechat
     class AccessToken
       # attr_reader :access_token, :component_access_token, :pre_auth_cod
 
-      def initialize(component_appid, authorizer_appid)
+      def initialize(component_appid, authorizer_appid = nil)
         @component_appid ||= component_appid
         @authorizer_appid ||= authorizer_appid
       end

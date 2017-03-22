@@ -10,7 +10,7 @@ module Wechat
     def initialize(component_appid, timeout, skip_verify_ssl)
       @component_appid = component_appid
       @client = HttpClient.new(API_BASE, timeout, skip_verify_ssl)
-      @access_token = Token::AccessToken.new(component_appid, nil)
+      @access_token = Token::AccessToken.new(component_appid)
     end
 
     def groups
