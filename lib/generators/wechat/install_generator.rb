@@ -14,9 +14,9 @@ module Wechat
         template 'config/initializers/wechat_redis_store.rb'
       end
 
-      def copy_wechat_controller
-        template 'app/controllers/wechats_controller.rb'
-      end
+      # def copy_wechat_controller
+      #   template 'app/controllers/wechats_controller.rb'
+      # end
 
       def copy_wechatauths_controller
         template 'app/controllers/wechatauths_controller.rb'
