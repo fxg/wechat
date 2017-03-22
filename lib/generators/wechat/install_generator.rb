@@ -18,7 +18,7 @@ module Wechat
         template 'app/controllers/wechats_controller.rb'
       end
 
-      def copy_wechatauth_controller
+      def copy_wechatauths_controller
         template 'app/controllers/wechatauths_controller.rb'
       end
 
@@ -34,7 +34,7 @@ module Wechat
         route  "post 'wx/:authorizer_appid/callback', to: 'wechats#create'"
         route "get 'wx/auth', to: 'wechats#auth_callback'"
         route "post 'wx/auth', to: 'wechats#auth'"
-        route "get 'wechatauth/authorize_page'"
+        route "get 'wechatauths/authorize_page'"
       end
     end
   end
