@@ -14,12 +14,12 @@ module Wechat
         template 'config/initializers/wechat_redis_store.rb'
       end
 
-      # def copy_wechat_controller
-      #   template 'app/controllers/wechats_controller.rb'
-      # end
+      def copy_wechat_controller
+        template 'app/controllers/wechats_controller.rb'
+      end
 
-      def copy_wechatauths_controller
-        template 'app/controllers/wechatauths_controller.rb'
+      def copy_wechatauth_controller
+        template 'app/controllers/wechatauth_controller.rb'
       end
 
       def add_redis_gem
@@ -34,7 +34,7 @@ module Wechat
         route  "post 'wx/:authorizer_appid/callback', to: 'wechats#create'"
         route "get 'wx/auth', to: 'wechats#auth_callback'"
         route "post 'wx/auth', to: 'wechats#auth'"
-        route "get 'wechatauths/authorize_page'"
+        route "get 'wechatauth/authorize_page'"
       end
     end
   end
