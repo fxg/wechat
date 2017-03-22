@@ -15,7 +15,7 @@ module Wechat
       end
 
       def copy_wechat_controller
-      template 'app/controllers/wechatauth_controller.rb'
+        template 'app/controllers/wechatauths_controller.rb'
         template 'app/controllers/wechats_controller.rb'
       end
 
