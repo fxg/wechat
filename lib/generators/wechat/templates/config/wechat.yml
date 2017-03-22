@@ -7,18 +7,18 @@ default: &default
 development:
   token: "my_token"
   encoding_aes_key:  "my_encoding_aes_key"
-  component_appid: "my_component_appid"
+  component_appid: "my_component_appid" # 第三方平台appid
   # trusted_domain_fullname: "trusted_domain_fullname" # 腾讯推荐授权域名为根据授权appid动态产生，不需要设置
 
 test:
   <<: *default
   token: "my_token"
   encoding_aes_key:  "my_encoding_aes_key"
-  component_appid: "my_component_appid"
+  component_appid: "my_component_appid" # 第三方平台appid
 
 production:
   <<: *default
-  component_appid: <%= ENV['COMPONENT_APPID'] %>
+  component_appid: <%= ENV['COMPONENT_APPID'] %> # 第三方平台appid
   token: <%= ENV['WECHAT_TOKEN'] %>
   timeout: 30,
   encoding_aes_key: <%= ENV['WECHAT_ENCODING_AES_KEY'] %>
@@ -26,35 +26,37 @@ production:
 #
 # wx2_development:
 #  <<: *default
-#  appid: "my_appid"
-#  secret: "my_secret"
-#  access_token: "tmp/wechat_access_token2"
-#  jsapi_ticket: "tmp/wechat_jsapi_ticket2"
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
 #
 # wx2_test:
 #  <<: *default
-#  appid: "my_appid"
-#  secret: "my_secret"
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
 #
 # wx2_production:
 #  <<: *default
-#  appid: "my_appid"
-#  secret: "my_secret"
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
 #
 # wx3_development:
 #  <<: *default
-#  appid: "my_appid"
-#  secret: "my_secret"
-#  access_token: "tmp/wechat_access_token3"
-#  jsapi_ticket: "tmp/wechat_jsapi_ticket3"
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
 #
 # wx3_test:
 #  <<: *default
-#  appid: "my_appid"
-#  secret: "my_secret"
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
 #
 # wx3_production:
 #  <<: *default
-#  appid: "my_appid"
-#  secret: "my_secret"
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
 #

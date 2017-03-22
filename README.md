@@ -65,11 +65,7 @@ rake db:migrate
 
 Enabling session will generate two files in Rails folder, you can add more columns to *wechat_session* table and add declaration to link to users table, it's also possible to store data directly in **hash_store**. if you are using PostgreSQL, using [hstore](http://guides.rubyonrails.org/active_record_postgresql.html#hstore)/json maybe better, but the best way is still to add a dedicate column to record the data, the Rails way.
 
-Using Redis to store wechat token and ticket:
-
-```console
-rails g wechat:redis_store
-```
+Using Redis to store wechat default:
 
 Redis store supports Rails application running in multi-server, no need to enable it if your Rails application is running on one server only, the wechat command won't read the token/ticket stored in Redis.
 
@@ -86,9 +82,9 @@ URL address for wechat created by running `rails g wechat:install` is `http://yo
 To use `wechat` command solely, you need to create configuration file `~/.wechat.yml` and include content below  for public account. The access_token will be written to a file.
 
 ```
-appid: "my_appid"
-secret: "my_secret"
-access_token: "/var/tmp/wechat_access_token"
+token: "my_token"
+encoding_aes_key:  "my_encoding_aes_key"
+component_appid: "my_component_appid"
 ```
 
 #### Configure for Rails
@@ -99,79 +95,69 @@ Public account configuration example：
 
 ```
 default: &default
-  appid: "app_id"
-  secret: "app_secret"
-  token:  "app_token"
-  access_token: "/var/tmp/wechat_access_token"
-  jsapi_ticket: "/var/tmp/wechat_jsapi_ticket"
+  encrypt_mode: true # must be true must fill encoding_aes_key
+  skip_verify_ssl: true
+  oauth2_cookie_duration: 7200 # seconds
 
-production:
-  appid: <%= ENV['WECHAT_APPID'] %>
-  secret: <%= ENV['WECHAT_APP_SECRET'] %>
-  token:   <%= ENV['WECHAT_TOKEN'] %>
-  access_token: <%= ENV['WECHAT_ACCESS_TOKEN'] %>
-  jsapi_ticket: <%= ENV['WECHAT_JSAPI_TICKET'] %>
-  oauth2_cookie_duration: <%= ENV['WECHAT_OAUTH2_COOKIE_DURATION'] %> # seconds
 
 development:
-  <<: *default
-  trusted_domain_fullname: "http://your_dev.proxy.qqbrowser.cc"
-
-test:
-  <<: *default
-```
-
-Although it's optional for public account, but highly recommended to enable encrypt mode by adding these two items to `wechat.yml`
-
-
-```
-default: &default
-  encrypt_mode: true
+  token: "my_token"
   encoding_aes_key:  "my_encoding_aes_key"
-```
-
-```
-default: &default
-  access_token: "C:/Users/[user_name]/wechat_access_token"
-  token:    ""
-  encoding_aes_key:  ""
-  jsapi_ticket: "C:/Users/[user_name]/wechat_jsapi_ticket"
-
-production:
-  access_token:  <%= ENV['WECHAT_ACCESS_TOKEN'] %>
-  token:      <%= ENV['WECHAT_TOKEN'] %>
-  timeout:    30,
-  skip_verify_ssl: true # not recommend
-  encoding_aes_key:  <%= ENV['WECHAT_ENCODING_AES_KEY'] %>
-  jsapi_ticket: <%= ENV['WECHAT_JSAPI_TICKET'] %>
-  oauth2_cookie_duration: <%= ENV['WECHAT_OAUTH2_COOKIE_DURATION'] %>
-
-development:
-  <<: *default
-  trusted_domain_fullname: "http://your_dev.proxy.qqbrowser.cc"
+  component_appid: "my_component_appid" # open appid
 
 test:
   <<: *default
+  token: "my_token"
+  encoding_aes_key:  "my_encoding_aes_key"
+  component_appid: "my_component_appid" # open appid
 
- # Multiple Accounts
- #
- # wx2_development:
- #  <<: *default
- #  appid: "my_appid"
- #  secret: "my_secret"
- #  access_token: "tmp/wechat_access_token2"
- #  jsapi_ticket: "tmp/wechat_jsapi_ticket2"
- #
- # wx2_test:
- #  <<: *default
- #  appid: "my_appid"
- #  secret: "my_secret"
- #
- # wx2_production:
- #  <<: *default
- #  appid: "my_appid"
- #  secret: "my_secret"
+production:
+  <<: *default
+  component_appid: <%= ENV['COMPONENT_APPID'] %> # open appid
+  token: <%= ENV['WECHAT_TOKEN'] %>
+  timeout: 30,
+  encoding_aes_key: <%= ENV['WECHAT_ENCODING_AES_KEY'] %>
+# Multiple Accounts
+#
+# wx2_development:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx2_test:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx2_production:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx3_development:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx3_test:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx3_production:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
 ```
+Tencent open platform default role: encrypt_mode must be true.
+
 
 For multiple accounts details reference [PR 150](https://github.com/Eric-Guo/wechat/pull/150)
 
@@ -202,7 +188,7 @@ Or you can provide full list of options.
 
 ```ruby
 class WechatFirstController < ActionController::Base
-   wechat_responder appid: "app1", secret: "secret1", token: "token1", access_token: Rails.root.join("tmp/access_token1")
+   wechat_responder  component_appid: "app1", token: "token1", encoding_aes_key: "key"
 
    on :text, with:"help", respond: "help content"
 end
@@ -239,22 +225,6 @@ class CartController < ActionController::Base
     wechat_oauth2 do |openid|
       @current_user = User.find_by(wechat_openid: openid)
       @articles = @current_user.articles
-    end
-  end
-end
-```
-
-For enterprise account, code below will get enterprise member's userinfo.
-
-```ruby
-class WechatsController < ActionController::Base
-  layout 'wechat'
-  wechat_responder
-  def apply_new
-    wechat_oauth2 do |userid|
-      @current_user = User.find_by(wechat_userid: userid)
-      @apply = Apply.new
-      @apply.user_id = @current_user.id
     end
   end
 end
@@ -327,65 +297,6 @@ Wechat commands:
   wechat user_group [OPEN_ID]                              # 查询用户所在分组
   wechat user_update_remark [OPEN_ID, REMARK]              # 设置备注名
   wechat users                                             # 关注者列表
-```
-
-#### Enterprise account command line
-```
-$ wechat
-Wechat commands:
-  wechat agent [AGENT_ID]                                  # 获取企业号应用详情
-  wechat agent_list                                        # 获取应用概况列表
-  wechat batch_job_result [JOB_ID]                         # 获取异步任务结果
-  wechat batch_replaceparty [BATCH_PARTY_CSV_MEDIA_ID]     # 全量覆盖部门
-  wechat batch_replaceuser [BATCH_USER_CSV_MEDIA_ID]       # 全量覆盖成员
-  wechat batch_syncuser [SYNC_USER_CSV_MEDIA_ID]           # 增量更新成员
-  wechat callbackip                                        # 获取微信服务器IP地址
-  wechat convert_to_openid [USER_ID]                       # userid转换成openid
-  wechat custom_image [OPENID, IMAGE_PATH]                 # 发送图片客服消息
-  wechat custom_music [OPENID, THUMBNAIL_PATH, MUSIC_URL]  # 发送音乐客服消息
-  wechat custom_news [OPENID, NEWS_YAML_PATH]              # 发送图文客服消息
-  wechat custom_text [OPENID, TEXT_MESSAGE]                # 发送文字客服消息
-  wechat custom_video [OPENID, VIDEO_PATH]                 # 发送视频客服消息
-  wechat custom_voice [OPENID, VOICE_PATH]                 # 发送语音客服消息
-  wechat department [DEPARTMENT_ID]                        # 获取部门列表
-  wechat department_create [NAME, PARENT_ID]               # 创建部门
-  wechat department_delete [DEPARTMENT_ID]                 # 删除部门
-  wechat department_update [DEPARTMENT_ID, NAME]           # 更新部门
-  wechat invite_user [USER_ID]                             # 邀请成员关注
-  wechat material [MEDIA_ID, PATH]                         # 永久媒体下载
-  wechat material_add [MEDIA_TYPE, PATH]                   # 永久媒体上传
-  wechat material_count                                    # 获取永久素材总数
-  wechat material_delete [MEDIA_ID]                        # 删除永久素材
-  wechat material_list [TYPE, OFFSET, COUNT]               # 获取永久素材列表
-  wechat media [MEDIA_ID, PATH]                            # 媒体下载
-  wechat media_create [MEDIA_TYPE, PATH]                   # 媒体上传
-  wechat media_uploadimg [IMAGE_PATH]                      # 上传图文消息内的图片
-  wechat menu                                              # 当前菜单
-  wechat menu_addconditional [CONDITIONAL_MENU_YAML_PATH]  # 创建个性化菜单
-  wechat menu_create [MENU_YAML_PATH]                      # 创建菜单
-  wechat menu_delconditional [MENU_ID]                     # 删除个性化菜单
-  wechat menu_delete                                       # 删除菜单
-  wechat menu_trymatch [USER_ID]                           # 测试个性化菜单匹配结果
-  wechat message_send [OPENID, TEXT_MESSAGE]               # 发送文字消息
-  wechat qrcode_download [TICKET, QR_CODE_PIC_PATH]        # 通过ticket下载二维码
-  wechat tag [TAG_ID]                                      # 获取标签成员
-  wechat tag_add_department [TAG_ID, PARTY_IDS]            # 增加标签部门
-  wechat tag_add_user [TAG_ID, USER_IDS]                   # 增加标签成员
-  wechat tag_create [TAGNAME, TAG_ID]                      # 创建标签
-  wechat tag_del_department [TAG_ID, PARTY_IDS]            # 删除标签部门
-  wechat tag_del_user [TAG_ID, USER_IDS]                   # 删除标签成员
-  wechat tag_delete [TAG_ID]                               # 删除标签
-  wechat tag_update [TAG_ID, TAGNAME]                      # 更新标签名字
-  wechat tags                                              # 获取所有标签
-  wechat template_message [OPENID, TEMPLATE_YAML_PATH]     # 模板消息接口
-  wechat upload_replaceparty [BATCH_PARTY_CSV_PATH]        # 上传文件方式全量覆盖部门
-  wechat upload_replaceuser [BATCH_USER_CSV_PATH]          # 上传文件方式全量覆盖成员
-  wechat user [OPEN_ID]                                    # 获取用户基本信息
-  wechat user_batchdelete [USER_ID_LIST]                   # 批量删除成员
-  wechat user_delete [USER_ID]                             # 删除成员
-  wechat user_list [DEPARTMENT_ID]                         # 获取部门成员详情
-  wechat user_simplelist [DEPARTMENT_ID]                   # 获取部门成员
-  wechat user_update_remark [OPEN_ID, REMARK]              # 设置备注名
 ```
 
 ### Command line usage demo (partially)

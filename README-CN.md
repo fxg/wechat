@@ -58,13 +58,9 @@ rake db:migrate
 
 运行后会自动启用回调消息会话(session)记录，wechat gem会在Rails项目中生成两个文件，用户可以在*wechat_session*表中添加更多字段或者声明一些关联关系。使用已有的**hash_store**直接保存也是可以的，但对于PostgreSQL用户，使用[hstore](http://guides.rubyonrails.org/active_record_postgresql.html#hstore)或者json格式可能更佳，当然，最佳方案仍然是添加新字段记录数据。
 
-启用Redis存贮token和ticket:
+系统默认启用Redis存贮token和ticket。
 
-```console
-rails g wechat:redis_store
-```
-
-Redis存贮相比默认的文件存贮，可以允许Rails应用运行在多台服务器中，如果只有一台服务器，仍然推荐使用默认的文件存贮，另外命令行不会读取Redis存贮的Token或者Ticket。
+Redis存贮可以允许Rails应用运行在多台服务器中。
 
 ## 配置
 
@@ -79,10 +75,13 @@ Redis存贮相比默认的文件存贮，可以允许Rails应用运行在多台�
 要使用命令行程序，需要在home目录中创建一个`~/.wechat.yml`，包含以下内容。其中`access_token`是存放access_token的文件位置。
 
 ```
-appid: "my_appid"
-secret: "my_secret"
-access_token: "/var/tmp/wechat_access_token"
+token: "my_token"
+encoding_aes_key:  "my_encoding_aes_key"
+component_appid: "my_component_appid" # 第三方平台appid
 ```
+
+#### 设置授权令牌的自动获取程序
+要将utils下的文件拷贝到自己应用下的目录，如rails root目录下的utils目录，并修改refresh_auth_code_token.rb中的app_config变量，将平台appid和appsecret填入，多个则填多个键值对。执行时，参数为rails所用的redis的配置文件全路径，和环境参数。将命令行写crontab，每18分钟执行一次程序将自动刷新令牌。
 
 #### Rails 全局配置
 Rails应用程序中，需要将配置文件放在`config/wechat.yml`，可以为不同environment创建不同的配置。
@@ -91,78 +90,70 @@ Rails应用程序中，需要将配置文件放在`config/wechat.yml`，可以�
 
 ```
 default: &default
-  appid: "app_id"
-  secret: "app_secret"
-  token:  "app_token"
-  access_token: "/var/tmp/wechat_access_token"
-  jsapi_ticket: "/var/tmp/wechat_jsapi_ticket"
-
-production:
-  appid: <%= ENV['WECHAT_APPID'] %>
-  secret: <%= ENV['WECHAT_APP_SECRET'] %>
-  token:   <%= ENV['WECHAT_TOKEN'] %>
-  access_token: <%= ENV['WECHAT_ACCESS_TOKEN'] %>
-  jsapi_ticket: <%= ENV['WECHAT_JSAPI_TICKET'] %>
-  oauth2_cookie_duration: <%= ENV['WECHAT_OAUTH2_COOKIE_DURATION'] %> # seconds
-
-development:
-  <<: *default
-  trusted_domain_fullname: "http://your_dev.proxy.qqbrowser.cc"
-
-test:
-  <<: *default
-```
-
-公众号可选安全模式（加密模式），通过添加如下配置可开启加密模式。
-
-```
-default: &default
-  encrypt_mode: true
-  encoding_aes_key:  "my_encoding_aes_key"
-```
-
-```
-default: &default
-  access_token: "C:/Users/[user_name]/wechat_access_token"
-  token:    ""
-  encoding_aes_key:  ""
-  jsapi_ticket: "C:/Users/[user_name]/wechat_jsapi_ticket"
-
-production:
-  access_token:  <%= ENV['WECHAT_ACCESS_TOKEN'] %>
-  token:      <%= ENV['WECHAT_TOKEN'] %>
-  timeout:    30,
+  encrypt_mode: true # must be true must fill encoding_aes_key
   skip_verify_ssl: true
-  encoding_aes_key:  <%= ENV['WECHAT_ENCODING_AES_KEY'] %>
-  jsapi_ticket: <%= ENV['WECHAT_JSAPI_TICKET'] %>
-  oauth2_cookie_duration: <%= ENV['WECHAT_OAUTH2_COOKIE_DURATION'] %>
+  oauth2_cookie_duration: 7200 # seconds
+
 
 development:
-  <<: *default
-  trusted_domain_fullname: "http://your_dev.proxy.qqbrowser.cc"
+  token: "my_token"
+  encoding_aes_key:  "my_encoding_aes_key"
+  component_appid: "my_component_appid" # 第三方平台appid
+  # trusted_domain_fullname: "trusted_domain_fullname" # 腾讯推荐授权域名为根据授权appid动态产生，不需要设置
 
 test:
   <<: *default
+  token: "my_token"
+  encoding_aes_key:  "my_encoding_aes_key"
+  component_appid: "my_component_appid" # 第三方平台appid
 
- # Multiple Accounts
- #
- # wx2_development:
- #  <<: *default
- #  appid: "my_appid"
- #  secret: "my_secret"
- #  access_token: "tmp/wechat_access_token2"
- #  jsapi_ticket: "tmp/wechat_jsapi_ticket2"
- #
- # wx2_test:
- #  <<: *default
- #  appid: "my_appid"
- #  secret: "my_secret"
- #
- # wx2_production:
- #  <<: *default
- #  appid: "my_appid"
- #  secret: "my_secret"
+production:
+  <<: *default
+  component_appid: <%= ENV['COMPONENT_APPID'] %> # 第三方平台appid
+  token: <%= ENV['WECHAT_TOKEN'] %>
+  timeout: 30,
+  encoding_aes_key: <%= ENV['WECHAT_ENCODING_AES_KEY'] %>
+# Multiple Accounts
+#
+# wx2_development:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx2_test:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx2_production:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx3_development:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx3_test:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
+# wx3_production:
+#  <<: *default
+#   token: "my_token"
+#   encoding_aes_key:  "my_encoding_aes_key"
+#   component_appid: "my_component_appid" # 第三方平台appid
+#
 ```
+
+公众号必选安全模式（加密模式）。
 
 进一步的多账号支持参见[PR 150](https://github.com/Eric-Guo/wechat/pull/150)。
 
@@ -178,7 +169,7 @@ test:
 
 Wechat服务器有报道曾出现[RestClient::SSLCertificateNotVerified](http://qydev.weixin.qq.com/qa/index.php?qa=11037)错误，此时可以选择关闭SSL验证。`skip_verify_ssl: true`
 
-#### 为每个Responder配置不同的appid和secret
+#### 为每个Responder配置不同的appid和其他参数
 
 有些情况下，单个Rails应用可能需要处理来自多个微信公众号的消息，您可以通过在`wechat_responder`和`wechat_api`后配置多个相关参数来支持多账号。
 
@@ -194,7 +185,7 @@ end
 
 ```ruby
 class WechatFirstController < ActionController::Base
-   wechat_responder appid: "app1", secret: "secret1", token: "token1", access_token: Rails.root.join("tmp/access_token1")
+   wechat_responder component_appid: "app1", token: "token1", encoding_aes_key: "key"
 
    on :text, with:"help", respond: "help content"
 end
@@ -231,22 +222,6 @@ class CartController < ActionController::Base
     wechat_oauth2 do |openid|
       @current_user = User.find_by(wechat_openid: openid)
       @articles = @current_user.articles
-    end
-  end
-end
-```
-
-企业号可使用如下代码取得企业用户的相关信息。
-
-```ruby
-class WechatsController < ActionController::Base
-  layout 'wechat'
-  wechat_responder
-  def apply_new
-    wechat_oauth2 do |userid|
-      @current_user = User.find_by(wechat_userid: userid)
-      @apply = Apply.new
-      @apply.user_id = @current_user.id
     end
   end
 end
@@ -316,65 +291,6 @@ Wechat commands:
   wechat user_group [OPEN_ID]                              # 查询用户所在分组
   wechat user_update_remark [OPEN_ID, REMARK]              # 设置备注名
   wechat users                                             # 关注者列表
-```
-
-#### 企业号命令行
-```
-$ wechat
-Wechat commands:
-  wechat agent [AGENT_ID]                                  # 获取企业号应用详情
-  wechat agent_list                                        # 获取应用概况列表
-  wechat batch_job_result [JOB_ID]                         # 获取异步任务结果
-  wechat batch_replaceparty [BATCH_PARTY_CSV_MEDIA_ID]     # 全量覆盖部门
-  wechat batch_replaceuser [BATCH_USER_CSV_MEDIA_ID]       # 全量覆盖成员
-  wechat batch_syncuser [SYNC_USER_CSV_MEDIA_ID]           # 增量更新成员
-  wechat callbackip                                        # 获取微信服务器IP地址
-  wechat convert_to_openid [USER_ID]                       # userid转换成openid
-  wechat custom_image [OPENID, IMAGE_PATH]                 # 发送图片客服消息
-  wechat custom_music [OPENID, THUMBNAIL_PATH, MUSIC_URL]  # 发送音乐客服消息
-  wechat custom_news [OPENID, NEWS_YAML_PATH]              # 发送图文客服消息
-  wechat custom_text [OPENID, TEXT_MESSAGE]                # 发送文字客服消息
-  wechat custom_video [OPENID, VIDEO_PATH]                 # 发送视频客服消息
-  wechat custom_voice [OPENID, VOICE_PATH]                 # 发送语音客服消息
-  wechat department [DEPARTMENT_ID]                        # 获取部门列表
-  wechat department_create [NAME, PARENT_ID]               # 创建部门
-  wechat department_delete [DEPARTMENT_ID]                 # 删除部门
-  wechat department_update [DEPARTMENT_ID, NAME]           # 更新部门
-  wechat invite_user [USER_ID]                             # 邀请成员关注
-  wechat material [MEDIA_ID, PATH]                         # 永久媒体下载
-  wechat material_add [MEDIA_TYPE, PATH]                   # 永久媒体上传
-  wechat material_count                                    # 获取永久素材总数
-  wechat material_delete [MEDIA_ID]                        # 删除永久素材
-  wechat material_list [TYPE, OFFSET, COUNT]               # 获取永久素材列表
-  wechat media [MEDIA_ID, PATH]                            # 媒体下载
-  wechat media_create [MEDIA_TYPE, PATH]                   # 媒体上传
-  wechat media_uploadimg [IMAGE_PATH]                      # 上传图文消息内的图片
-  wechat menu                                              # 当前菜单
-  wechat menu_addconditional [CONDITIONAL_MENU_YAML_PATH]  # 创建个性化菜单
-  wechat menu_create [MENU_YAML_PATH]                      # 创建菜单
-  wechat menu_delconditional [MENU_ID]                     # 删除个性化菜单
-  wechat menu_delete                                       # 删除菜单
-  wechat menu_trymatch [USER_ID]                           # 测试个性化菜单匹配结果
-  wechat message_send [OPENID, TEXT_MESSAGE]               # 发送文字消息
-  wechat qrcode_download [TICKET, QR_CODE_PIC_PATH]        # 通过ticket下载二维码
-  wechat tag [TAG_ID]                                      # 获取标签成员
-  wechat tag_add_department [TAG_ID, PARTY_IDS]            # 增加标签部门
-  wechat tag_add_user [TAG_ID, USER_IDS]                   # 增加标签成员
-  wechat tag_create [TAGNAME, TAG_ID]                      # 创建标签
-  wechat tag_del_department [TAG_ID, PARTY_IDS]            # 删除标签部门
-  wechat tag_del_user [TAG_ID, USER_IDS]                   # 删除标签成员
-  wechat tag_delete [TAG_ID]                               # 删除标签
-  wechat tag_update [TAG_ID, TAGNAME]                      # 更新标签名字
-  wechat tags                                              # 获取所有标签
-  wechat template_message [OPENID, TEMPLATE_YAML_PATH]     # 模板消息接口
-  wechat upload_replaceparty [BATCH_PARTY_CSV_PATH]        # 上传文件方式全量覆盖部门
-  wechat upload_replaceuser [BATCH_USER_CSV_PATH]          # 上传文件方式全量覆盖成员
-  wechat user [OPEN_ID]                                    # 获取用户基本信息
-  wechat user_batchdelete [USER_ID_LIST]                   # 批量删除成员
-  wechat user_delete [USER_ID]                             # 删除成员
-  wechat user_list [DEPARTMENT_ID]                         # 获取部门成员详情
-  wechat user_simplelist [DEPARTMENT_ID]                   # 获取部门成员
-  wechat user_update_remark [OPEN_ID, REMARK]              # 设置备注名
 ```
 
 ### 使用场景
