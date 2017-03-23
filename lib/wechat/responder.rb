@@ -226,7 +226,7 @@ module Wechat
       if params[:component_redirect_uri].nil?
         render plain: "authorize ok!"
       else
-        redirect_to "#{params[:component_redirect_uri]}?component_appid=#{component_appid}&authorizer_appid=#{authorizer_appid}"
+        redirect_to "#{params[:component_redirect_uri]}&component_appid=#{component_appid}&authorizer_appid=#{authorizer_appid}"
       end
     end
 
