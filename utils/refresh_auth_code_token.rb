@@ -70,7 +70,10 @@ class AuthorizerAccessToken
     }
     authorizer_access_token_hash = client.post("component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
 
+    redis.multi
     redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
+    redis.expires authorizer_access_token_key, authorizer_access_token_hash['expires_in']
+    redis.exec
   end
 
   private
@@ -100,7 +103,10 @@ class JsapiTicket
     client = HttpClient.new(API_BASE, 20, true)
     jsapi_ticket_key_hash = client.get("ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
 
+    redis.multi
     redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
+    redis.expires jsapi_ticket_key, jsapi_ticket_key_hash['expires_in']
+    redis.exec
   end
 
   private
