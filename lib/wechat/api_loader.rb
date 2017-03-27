@@ -72,7 +72,7 @@ HELP
           end
           rails_env = ENV['RAILS_ENV'] || 'development'
           config = resovle_config_file(rails_config_file, rails_env)
-          
+
           if config.present? # && (default = config[:default]) && (default['component_appid'])
             puts "Using rails project #{ENV['WECHAT_CONF_FILE'] || "config/wechat.yml"} #{rails_env} setting..."
             return config
