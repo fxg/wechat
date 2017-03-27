@@ -73,7 +73,7 @@ Redis store supports Rails application running in multi-server, no need to enabl
 
 #### Configure wechat for the first time
 
-Make sure to finish all the setup on rails side first, then submit to wechat. Otherwise, wechat will raise error.
+Make sure to finish all the setup on rails side first, then submit those setting to Tencent wechat management website. Otherwise, wechat will raise error.
 
 URL address for wechat created by running `rails g wechat:install` is `http://your-server.com/wechat`
 
@@ -279,6 +279,7 @@ Wechat commands:
   wechat menu_delconditional [MENU_ID]                     # 删除个性化菜单
   wechat menu_delete                                       # 删除菜单
   wechat menu_trymatch [USER_ID]                           # 测试个性化菜单匹配结果
+  wechat message_mass_delete [MSG_ID]                      # 删除群发消息
   wechat qrcode_create_limit_scene [SCENE_ID_OR_STR]       # 请求永久二维码
   wechat qrcode_create_scene [SCENE_ID, EXPIRE_SECONDS]    # 请求临时二维码
   wechat qrcode_download [TICKET, QR_CODE_PIC_PATH]        # 通过ticket下载二维码
@@ -483,7 +484,7 @@ class WechatsController < ActionController::Base
 
   # When receive '<n>news', will match and will get count as <n> as parameter
   on :text, with: /^(\d+) news$/ do |request, count|
-    # Wechat article can only contain max 10 items, large than 10 will be dropped.
+    # Wechat article can only contain max 8 items, large than 8 will be dropped.
     news = (1..count.to_i).each_with_object([]) { |n, memo| memo << { title: 'News title', content: "No. #{n} news content" } }
     request.reply.news(news) do |article, n, index| # article is return object
       article.item title: "#{index} #{n[:title]}", description: n[:content], pic_url: 'http://www.baidu.com/img/bdlogo.gif', url: 'http://www.baidu.com/'
@@ -587,6 +588,12 @@ class WechatsController < ActionController::Base
   # When batch job "replace department (full sync)" is finished.
   on :batch_job, with: 'replace_party' do |request, batch_job|
     request.reply.text "replace_party job #{batch_job[:JobId]} finished, return code #{batch_job[:ErrCode]}, return message #{batch_job[:ErrMsg]}"
+  end
+
+  # mass sent job finish result notification
+  on :event, with: 'masssendjobfinish' do |request|
+    # https://mp.weixin.qq.com/wiki?action=doc&id=mp1481187827_i0l21&t=0.03571905015619936#8
+    request.reply.success # request is XML result hash.
   end
 
   # If no match above will fallback to below

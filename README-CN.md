@@ -273,6 +273,7 @@ Wechat commands:
   wechat menu_delconditional [MENU_ID]                     # 删除个性化菜单
   wechat menu_delete                                       # 删除菜单
   wechat menu_trymatch [USER_ID]                           # 测试个性化菜单匹配结果
+  wechat message_mass_delete [MSG_ID]                      # 删除群发消息
   wechat qrcode_create_limit_scene [SCENE_ID_OR_STR]       # 请求永久二维码
   wechat qrcode_create_scene [SCENE_ID, EXPIRE_SECONDS]    # 请求临时二维码
   wechat qrcode_download [TICKET, QR_CODE_PIC_PATH]        # 通过ticket下载二维码
@@ -478,7 +479,7 @@ class WechatsController < ActionController::Base
 
   # 当请求的文字信息内容为'<n>条新闻'时, 使用这个responder处理, 并将n作为第二个参数
   on :text, with: /^(\d+)条新闻$/ do |request, count|
-    # 微信最多显示10条新闻，大于10条将只取前10条
+    # 微信最多显示8条新闻，大于8条将只取前8条
     news = (1..count.to_i).each_with_object([]) { |n, memo| memo << { title: '新闻标题', content: "第#{n}条新闻的内容#{n.hash}" } }
     request.reply.news(news) do |article, n, index| # 回复"articles"
       article.item title: "#{index} #{n[:title]}", description: n[:content], pic_url: 'http://www.baidu.com/img/bdlogo.gif', url: 'http://www.baidu.com/'
@@ -583,6 +584,12 @@ class WechatsController < ActionController::Base
   # 当异步任务全量覆盖部门完成时推送
   on :batch_job, with: 'replace_party' do |request, batch_job|
     request.reply.text "job #{batch_job[:JobId]} finished, return code #{batch_job[:ErrCode]}, return message #{batch_job[:ErrMsg]}"
+  end
+
+  # 事件推送群发结果
+  on :event, with: 'masssendjobfinish' do |request|
+    # https://mp.weixin.qq.com/wiki?action=doc&id=mp1481187827_i0l21&t=0.03571905015619936#8
+    request.reply.success # request is XML result hash.
   end
 
   # 当无任何responder处理用户信息时,使用这个responder处理

@@ -75,6 +75,22 @@ module Wechat
       post 'shorturl', JSON.generate(action: 'long2short', long_url: long_url)
     end
 
+    def message_mass_sendall(message)
+      post 'message/mass/sendall', message.to_json
+    end
+
+    def message_mass_delete(msg_id)
+      post 'message/mass/delete', JSON.generate(msg_id: msg_id)
+    end
+
+    def message_mass_preview(message)
+      post 'message/mass/preview', message.to_json
+    end
+
+    def message_mass_get(msg_id)
+      post 'message/mass/get', JSON.generate(msg_id: msg_id)
+    end
+
     def wxa_create_qrcode(path, width = 430)
       post 'wxaapp/createwxaqrcode', JSON.generate(path: path, width: width)
     end
