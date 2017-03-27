@@ -14,7 +14,7 @@ require 'fileutils'
 require 'yaml'
 require 'wechat/api_loader'
 require 'cgi'
-require 'Redis'
+require 'redis'
 
 module Wechat
   module Token
