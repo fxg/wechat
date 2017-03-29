@@ -46,7 +46,7 @@ HELP
 
       configs.each do |_, cfg|
         cfg[:timeout] ||= 20
-        cfg[:have_session_class] = class_exists?('WechatSession')
+        # cfg[:have_session_class] = class_exists?('WechatSession')
       end
 
       # create config object using raw config data
