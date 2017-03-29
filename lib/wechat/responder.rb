@@ -195,7 +195,7 @@ module Wechat
         head :ok, content_type: 'text/html'
       end
 
-      response_msg.save_session if response_msg.is_a?(Wechat::Message)
+      # response_msg.save_session if response_msg.is_a?(Wechat::Message)
 
       ActiveSupport::Notifications.instrument 'wechat.responder.after_create', request: request_msg, response: response_msg
     end
