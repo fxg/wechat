@@ -74,9 +74,6 @@ class AuthorizerAccessToken
       authorizer_refresh_token: authorizer_refresh_token
     }
 
-    # client = HttpClient.new(API_BASE, 20, true)
-    # authorizer_access_token_hash = client.post("component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
-
     clnt = HTTPClient.new()
     resp = clnt.post("#{API_BASE}component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
     authorizer_access_token_hash = JSON.parse(resp.body)
@@ -112,9 +109,6 @@ class JsapiTicket
   def refresh
     # exit unless expires?
     authorizer_access_token = redis.hget authorizer_access_token_key, "authorizer_access_token"
-
-    # client = HttpClient.new(API_BASE, 20, true)
-    # jsapi_ticket_key_hash = client.get("ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
 
     clnt = HTTPClient.new()
     resp = clnt.get("#{API_BASE}ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
