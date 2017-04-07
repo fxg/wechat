@@ -1,9 +1,9 @@
-require 'mechanize'
-require 'json'
+require 'optparse'
 require 'yaml'
 require 'redis'
+require 'httpclient'
+require 'json'
 require 'securerandom'
-require_relative 'http_client'
 
 class ComponentAccessToken
   attr_reader :redis, :component_appid, :component_appsecret, :component_access_token_key, :component_verify_ticket_key
@@ -22,16 +22,20 @@ class ComponentAccessToken
     # 获取component_verify_ticket
     component_verify_ticket = redis.hget component_verify_ticket_key, "ComponentVerifyTicket"
 
-    client = HttpClient.new(API_BASE, 20, true)
-
     component_verify_ticket_params = {
-      component_appid: component_appid,
-      component_appsecret: component_appsecret,
+      component_appid: @component_appid,
+      component_appsecret: @component_appsecret,
       component_verify_ticket: component_verify_ticket
     }
-    component_access_token_hash = client.post('component/api_component_token', JSON.generate(component_verify_ticket_params))
 
+    clnt = HTTPClient.new()
+    resp = clnt.post("#{API_BASE}component/api_component_token", JSON.generate(component_verify_ticket_params))
+    component_access_token_hash = JSON.parse(resp.body)
+
+    redis.multi
     redis.hmset component_access_token_key, "component_access_token", "#{component_access_token_hash['component_access_token']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{component_access_token_hash['expires_in']}"
+    redis.expire component_access_token_key, component_access_token_hash['expires_in']
+    redis.exec
   rescue
     p $!
   end
@@ -64,13 +68,18 @@ class AuthorizerAccessToken
     component_access_token = redis.hget component_access_token_key, "component_access_token"
     authorizer_refresh_token = redis.hget authorizer_access_token_key, "authorizer_refresh_token"
 
-    client = HttpClient.new(API_BASE, 20, true)
     authorizer_access_token_params = {
       component_appid: component_appid,
       authorizer_appid: authorizer_appid,
       authorizer_refresh_token: authorizer_refresh_token
     }
-    authorizer_access_token_hash = client.post("component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
+
+    # client = HttpClient.new(API_BASE, 20, true)
+    # authorizer_access_token_hash = client.post("component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
+
+    clnt = HTTPClient.new()
+    resp = clnt.post("#{API_BASE}component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
+    authorizer_access_token_hash = JSON.parse(resp.body)
 
     redis.multi
     redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
@@ -104,8 +113,12 @@ class JsapiTicket
     # exit unless expires?
     authorizer_access_token = redis.hget authorizer_access_token_key, "authorizer_access_token"
 
-    client = HttpClient.new(API_BASE, 20, true)
-    jsapi_ticket_key_hash = client.get("ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
+    # client = HttpClient.new(API_BASE, 20, true)
+    # jsapi_ticket_key_hash = client.get("ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
+
+    clnt = HTTPClient.new()
+    resp = clnt.get("#{API_BASE}ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
+    jsapi_ticket_key_hash = JSON.parse(resp.body)
 
     redis.multi
     redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
@@ -126,6 +139,28 @@ class JsapiTicket
   end
 end
 
+options = {}
+option_parser = OptionParser.new do |opts|
+  # 这里是这个命令行工具的帮助信息
+  opts.banner = 'here is help messages of the command line tool.'
+
+  options[:env] = 'default'
+  opts.on('-e ENV', '--env ENV', 'rails env') do |value|
+    # 这个部分就是使用这个Option后执行的代码
+    options[:env] = value
+  end
+
+  opts.on('-r FILE', '--redis_conf File', 'redis config file') do |value|
+    options[:redis_conf] = value
+  end
+
+  opts.on('-a FILE', '--apps_conf File', 'wechat component applications secret file') do |value|
+    options[:apps_conf] = value
+  end
+end.parse!
+
+# ruby test.rb -e default --redisconf "/Users/fengxinguo/projects/detai/member/config/redis.yml" -a "/Users/fengxinguo/projects/detai/member/config/wechat_component_apps.yml"
+
 def resovle_config_file(config_file, env)
   if File.exist?(config_file)
     raw_data = YAML.load(File.read(config_file))
@@ -133,29 +168,21 @@ def resovle_config_file(config_file, env)
     if env
       # Process multiple accounts when env is given
       raw_data.each do |key, value|
-        if key == env
-          configs[:default] = value
-        elsif m = /(.*?)_#{env}$/.match(key)
-          configs[m[1].to_sym] = value
-        end
+        configs[:default] = value if key == env
       end
     else
       # Treat is as one account when env is omitted
       configs[:default] = raw_data
     end
-    configs
+
+    configs[:default]
   end
 end
 
-app_config = {"component_appid" => "component_appsecret"}
+redis_configs = resovle_config_file(options[:redis_conf], options[:env])
+apps_configs = resovle_config_file(options[:apps_conf], options[:env])
 
-# 读取redis配置文件:config/redis.conf
-config_file = ARGV[0] # 文件全路径
-env = ARGV[1] # 模式名
-configs = resovle_config_file(config_file, env)
-config_hash = configs[env.to_sym]
-
-redis_cli = Redis.new(:host => config_hash['host'], :port => config_hash['port'], :db => config_hash['db'] || 0)
+redis_cli = Redis.new(redis_configs)
 
 wechat_keys = redis_cli.keys "wechat_component_verify_ticket_*"
 wechat_keys.each do |key|
@@ -164,9 +191,9 @@ wechat_keys.each do |key|
   component_appid = $1
   next if component_appid == ''
 
-  next if app_config["#{component_appid}"].nil?
+  next if apps_configs["#{component_appid}"].nil?
 
-  ComponentAccessToken.new(redis_cli, component_appid, app_config["#{component_appid}"]).refresh
+  ComponentAccessToken.new(redis_cli, component_appid, apps_configs["#{component_appid}"]).refresh
 
   # 刷新auth_access_token,refresh_toekn
   auth_app_keys = redis_cli.keys "wechat_authorization_info_#{component_appid}_*"
