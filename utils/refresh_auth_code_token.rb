@@ -32,6 +32,8 @@ class ComponentAccessToken
     resp = clnt.post("#{API_BASE}component/api_component_token", JSON.generate(component_verify_ticket_params))
     component_access_token_hash = JSON.parse(resp.body)
 
+    raise "#{component_access_token_hash}" if component_access_token_hash['errcode'].to_i > 0
+
     redis.multi
     redis.hmset component_access_token_key, "component_access_token", "#{component_access_token_hash['component_access_token']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{component_access_token_hash['expires_in']}"
     redis.expire component_access_token_key, component_access_token_hash['expires_in']
@@ -78,6 +80,8 @@ class AuthorizerAccessToken
     resp = clnt.post("#{API_BASE}component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
     authorizer_access_token_hash = JSON.parse(resp.body)
 
+    raise "#{authorizer_access_token_hash}" if authorizer_access_token_hash['errcode'].to_i > 0
+
     redis.multi
     redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
     redis.expire authorizer_access_token_key, authorizer_access_token_hash['expires_in']
@@ -113,6 +117,8 @@ class JsapiTicket
     clnt = HTTPClient.new()
     resp = clnt.get("#{API_BASE}ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
     jsapi_ticket_key_hash = JSON.parse(resp.body)
+
+    raise "#{jsapi_ticket_key_hash}" if jsapi_ticket_key_hash['errcode'].to_i > 0
 
     redis.multi
     redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
