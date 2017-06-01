@@ -20,6 +20,8 @@ module Wechat
 
       wechat.access_token = Token::AccessToken.new(wechat.component_appid, wechat.authorizer_appid)
 
+      raise AccessTokenExpiredError if wechat.access_token.token.blank?
+
       oauth2_params = {
         appid: wechat.authorizer_appid,
         redirect_uri: page_url,
