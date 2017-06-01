@@ -236,20 +236,41 @@ module Wechat
 
     private
 
-    QUERY_PRE_AUTH = 'https://api.weixin.qq.com/cgi-bin/'.freeze
+    API_BASE = 'https://api.weixin.qq.com/cgi-bin/'.freeze
 
     def authorizer_info
       url_params = {
         component_access_token: Token::AccessToken.new(wechat.component_appid).component_access_token
       }
 
-      resp = wechat.client.post("component/api_query_auth", JSON.generate(component_appid: wechat.component_appid, authorization_code: params[:auth_code]), params: url_params, base: QUERY_PRE_AUTH)
+      # 获取授权公众号的信息及相关token
+      resp = wechat.client.post("component/api_query_auth", JSON.generate(component_appid: wechat.component_appid, authorization_code: params[:auth_code]), params: url_params, base: API_BASE)
 
       authorization_info_hash = resp['authorization_info']
-      Wechat.redis.set "wechat_authorization_info_#{wechat.component_appid}_#{authorization_info_hash['authorizer_appid']}", authorization_info_hash.to_json
-      Wechat.redis.hmset "wechat_authorizer_access_token_#{wechat.component_appid}_#{authorization_info_hash['authorizer_appid']}", "authorizer_access_token", "#{authorization_info_hash['authorizer_access_token']}", "expires_in", "#{authorization_info_hash['expires_in']}", "authorizer_refresh_token", "#{authorization_info_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
 
-      [ wechat.component_appid, authorization_info_hash['authorizer_appid'] ]
+      component_appid = wechat.component_appid
+      authorizer_appid = authorization_info_hash['authorizer_appid']
+      authorizer_access_token = authorization_info_hash['authorizer_access_token']
+
+      wechat_authorizer_access_token_key = "wechat_authorizer_access_token_#{component_appid}_#{authorizer_appid}"
+      Wechat.redis.multi
+      Wechat.redis.set "wechat_authorization_info_#{component_appid}_#{authorizer_appid}", authorization_info_hash.to_json
+      Wechat.redis.hmset wechat_authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token}", "expires_in", "#{authorization_info_hash['expires_in']}", "authorizer_refresh_token", "#{authorization_info_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
+      Wechat.redis.expire wechat_authorizer_access_token_key, authorization_info_hash['expires_in']
+      Wechat.redis.exec
+
+      # 获取授权公众号的ticket
+      resp = wechat.client.get("ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi", base: API_BASE)
+
+      jsapi_ticket_key = "wechat_jsapi_ticket_key_#{component_appid}_#{authorizer_appid}"
+      jsapi_ticket_key_hash = resp
+
+      Wechat.redis.multi
+      Wechat.redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
+      Wechat.redis.expire jsapi_ticket_key, jsapi_ticket_key_hash['expires_in']
+      Wechat.redis.exec
+
+      [ component_appid, authorizer_appid ]
     end
 
     def verify_signature
