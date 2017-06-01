@@ -208,7 +208,12 @@ module Wechat
         Wechat.redis.hmset("#{auth_header}#{post_xml['AppId']}", "AppId", "#{post_xml['AppId']}", "ComponentVerifyTicket", "#{post_xml['ComponentVerifyTicket']}", "InfoType", "#{post_xml['InfoType']}", "CreateTime", "#{post_xml['CreateTime']}")
       when :unauthorized
         Wechat.redis.hmset("#{auth_header}#{post_xml['AppId']}_#{post_xml['AuthorizerAppid']}", "CreateTime", "#{post_xml['CreateTime']}")
-        Wechat.redis.del("wechat_component_verify_ticket_#{post_xml['AppId']}")
+        Wechat.redis.del("wechat_authorized_#{post_xml['AppId']}_#{post_xml['AuthorizerAppid']}")
+        Wechat.redis.del("wechat_authorization_info_#{post_xml['AppId']}_#{post_xml['AuthorizerAppid']}")
+        Wechat.redis.del("wechat_authorizer_access_token_#{post_xml['AppId']}_#{post_xml['Authorize
+        rAppid']}")
+        Wechat.redis.del("wechat_jsapi_ticket_key_#{post_xml['AppId']}_#{post_xml['Authorize
+        rAppid']}")
       when :authorized, :updateauthorized
         Wechat.redis.hmset("#{auth_header}#{post_xml['AppId']}_#{post_xml['AuthorizerAppid']}", "CreateTime", "#{post_xml['CreateTime']}", "AuthorizationCode", "#{post_xml['AuthorizationCode']}", "AuthorizationCodeExpiredTime", "#{post_xml['AuthorizationCodeExpiredTime']}")
       end
