@@ -32,7 +32,7 @@ class ComponentAccessToken
     resp = clnt.post("#{API_BASE}component/api_component_token", JSON.generate(component_verify_ticket_params))
     component_access_token_hash = JSON.parse(resp.body)
 
-    raise "#{component_access_token_hash}" if component_access_token_hash['errcode'].to_i > 0
+    raise "ComponentAccessToken: component_appid: #{@component_appid}, #{component_access_token_hash}" if component_access_token_hash['errcode'].to_i > 0
 
     redis.multi
     redis.hmset component_access_token_key, "component_access_token", "#{component_access_token_hash['component_access_token']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{component_access_token_hash['expires_in']}"
@@ -80,7 +80,7 @@ class AuthorizerAccessToken
     resp = clnt.post("#{API_BASE}component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
     authorizer_access_token_hash = JSON.parse(resp.body)
 
-    raise "#{authorizer_access_token_hash}" if authorizer_access_token_hash['errcode'].to_i > 0
+    raise "AuthorizerAccessToken: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, #{authorizer_access_token_hash}" if authorizer_access_token_hash['errcode'].to_i > 0
 
     redis.multi
     redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
@@ -118,7 +118,7 @@ class JsapiTicket
     resp = clnt.get("#{API_BASE}ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
     jsapi_ticket_key_hash = JSON.parse(resp.body)
 
-    raise "#{jsapi_ticket_key_hash}" if jsapi_ticket_key_hash['errcode'].to_i > 0
+    raise "JsapiTicket: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, #{jsapi_ticket_key_hash}" if jsapi_ticket_key_hash['errcode'].to_i > 0
 
     redis.multi
     redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
@@ -159,7 +159,7 @@ option_parser = OptionParser.new do |opts|
   end
 end.parse!
 
-# ruby test.rb -e default --redisconf "/Users/fengxinguo/projects/detai/member/config/redis.yml" -a "/Users/fengxinguo/projects/detai/member/config/wechat_component_apps.yml"
+# ruby test.rb -e default -r "/Users/fengxinguo/projects/detai/member/config/redis.yml" -a "/Users/fengxinguo/projects/detai/member/config/wechat_component_apps.yml"
 
 def resovle_config_file(config_file, env)
   if File.exist?(config_file)
@@ -193,7 +193,11 @@ wechat_keys.each do |key|
 
   next if apps_configs["#{component_appid}"].nil?
 
-  ComponentAccessToken.new(redis_cli, component_appid, apps_configs["#{component_appid}"]).refresh
+  begin
+    ComponentAccessToken.new(redis_cli, component_appid, apps_configs["#{component_appid}"]).refresh
+  rescue
+    p $!
+  end
 
   # 刷新auth_access_token,refresh_toekn
   auth_app_keys = redis_cli.keys "wechat_authorization_info_#{component_appid}_*"
@@ -203,7 +207,15 @@ wechat_keys.each do |key|
     authorizer_appid = $1
     next if authorizer_appid == ''
 
-    AuthorizerAccessToken.new(redis_cli, component_appid, authorizer_appid).refresh
-    JsapiTicket.new(redis_cli, component_appid, authorizer_appid).refresh
+    begin
+      AuthorizerAccessToken.new(redis_cli, component_appid, authorizer_appid).refresh
+    rescue
+      p $!
+    end
+    begin
+      JsapiTicket.new(redis_cli, component_appid, authorizer_appid).refresh
+    rescue
+      p $!
+    end
   end
 end
