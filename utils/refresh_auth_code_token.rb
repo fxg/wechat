@@ -32,14 +32,14 @@ class ComponentAccessToken
     resp = clnt.post("#{API_BASE}component/api_component_token", JSON.generate(component_verify_ticket_params))
     component_access_token_hash = JSON.parse(resp.body)
 
-    raise "ComponentAccessToken: component_appid: #{@component_appid}, #{component_access_token_hash}" if component_access_token_hash['errcode'].to_i > 0
+    raise "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: ComponentAccessToken: component_appid: #{@component_appid}, #{component_access_token_hash}" if component_access_token_hash['errcode'].to_i > 0
 
     redis.multi
     redis.hmset component_access_token_key, "component_access_token", "#{component_access_token_hash['component_access_token']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{component_access_token_hash['expires_in']}"
     redis.expire component_access_token_key, component_access_token_hash['expires_in']
     redis.exec
   rescue
-    p $!
+    p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
   end
 
   private
@@ -80,14 +80,14 @@ class AuthorizerAccessToken
     resp = clnt.post("#{API_BASE}component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
     authorizer_access_token_hash = JSON.parse(resp.body)
 
-    raise "AuthorizerAccessToken: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, #{authorizer_access_token_hash}" if authorizer_access_token_hash['errcode'].to_i > 0
+    raise "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: AuthorizerAccessToken: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, #{authorizer_access_token_hash}" if authorizer_access_token_hash['errcode'].to_i > 0
 
     redis.multi
     redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
     redis.expire authorizer_access_token_key, authorizer_access_token_hash['expires_in']
     redis.exec
   rescue
-    p $!
+    p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
   end
 
   private
@@ -101,7 +101,7 @@ class AuthorizerAccessToken
 end
 
 class JsapiTicket
-  attr_reader :redis, :authorizer_access_token_key, :authorizer_appid, :jsapi_ticket_key
+  attr_reader :redis, :authorizer_access_token_key, :component_appid, :authorizer_appid, :jsapi_ticket_key
   API_BASE = 'https://api.weixin.qq.com/cgi-bin/'.freeze
 
   def initialize(redis, component_appid, authorizer_appid)
@@ -120,14 +120,14 @@ class JsapiTicket
     resp = clnt.get("#{API_BASE}ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
     jsapi_ticket_key_hash = JSON.parse(resp.body)
 
-    raise "JsapiTicket: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, #{jsapi_ticket_key_hash}" if jsapi_ticket_key_hash['errcode'].to_i > 0
+    raise "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: JsapiTicket: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, #{jsapi_ticket_key_hash}" if jsapi_ticket_key_hash['errcode'].to_i > 0
 
     redis.multi
     redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
     redis.expire jsapi_ticket_key, jsapi_ticket_key_hash['expires_in']
     redis.exec
   rescue
-    p $!
+    p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
   end
 
   private
@@ -198,7 +198,7 @@ wechat_keys.each do |key|
   begin
     ComponentAccessToken.new(redis_cli, component_appid, apps_configs["#{component_appid}"]).refresh
   rescue
-    p $!
+    p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
   end
 
   # 刷新auth_access_token,refresh_toekn
@@ -212,12 +212,12 @@ wechat_keys.each do |key|
     begin
       AuthorizerAccessToken.new(redis_cli, component_appid, authorizer_appid).refresh
     rescue
-      p $!
+      p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
     end
     begin
       JsapiTicket.new(redis_cli, component_appid, authorizer_appid).refresh
     rescue
-      p $!
+      p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
     end
   end
 end
