@@ -9,11 +9,7 @@ module Wechat
       if component_appid
         Wechat::Api.new(component_appid, c.timeout, c.skip_verify_ssl)
       else
-        puts <<-HELP
-Need create ~/.wechat.yml with wechat appid and secret
-or running at rails root folder so wechat can read config/wechat.yml
-HELP
-        exit 1
+        raise "Need create ~/.wechat.yml with wechat appid and secret or running at rails root folder so wechat can read config/wechat.yml"
       end
     end
 

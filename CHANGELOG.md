@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.8.10 (released at 6/19/2017)
+
+* fix material_delete correctly.
+
+## v0.8.9 (released at 6/18/2017)
+
+* wechat material_delete failed to work, thanks @Victorialice report #78
+
+## v0.8.8 (released at 5/18/2017)
+
+* Better support multiple account. by @xiewenwei #187
+* Allow load figaro via RAILS_ENV. by @goofansu #186
+
+## v0.8.7 (released at 4/23/2017)
+
+* Support new wxa_get_wxacode API for miniapp.
+* Add InvalidCredentialError, support audio/amr, voice/speex as file and text/plain as json. by @acenqiu #184
+
 ## v0.8.6 (released at 3/17/2017)
 
 * Support Rails 5.1 officially.
@@ -17,17 +35,17 @@
 
 ## v0.8.4 (released at 1/12/2017)
 
-# Support Ruby 2.4.0
-# Add support of Enterprise RedPacket API, by @zhangbin #169
+* Support Ruby 2.4.0
+* Add support of Enterprise RedPacket API, by @zhangbin #169
 
 ## v0.8.3 (released at 11/26/2016)
 
-# Fix wechat template key has camelCase problem, by @RyanChenDji #159
-# Fix long time of oauth2_state bug for wechat_oauth2 methods, by @IvanChou #162
+* Fix wechat template key has camelCase problem, by @RyanChenDji #159
+* Fix long time of oauth2_state bug for wechat_oauth2 methods, by @IvanChou #162
 
 ## v0.8.2 (released at 11/2/2016)
 
-# Bug which if not using multi-account but using web login.
+* Bug which if not using multi-account but using web login.
 
 ## v0.8.1 (released at 11/2/2016)
 

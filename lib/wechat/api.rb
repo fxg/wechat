@@ -6,6 +6,7 @@ require 'wechat/ticket/jsapi_ticket'
 module Wechat
   class Api < ApiBase
     API_BASE = 'https://api.weixin.qq.com/cgi-bin/'.freeze
+    WXA_BASE = 'https://api.weixin.qq.com/wxa/'.freeze
 
     def initialize(component_appid, timeout, skip_verify_ssl)
       @component_appid = component_appid
@@ -91,6 +92,10 @@ module Wechat
       post 'message/mass/get', JSON.generate(msg_id: msg_id)
     end
 
+    def wxa_get_wxacode(path, width = 430)
+      post 'getwxacode', JSON.generate(path: path, width: width), base: WXA_BASE
+    end
+
     def wxa_create_qrcode(path, width = 430)
       post 'wxaapp/createwxaqrcode', JSON.generate(path: path, width: width)
     end
@@ -138,7 +143,7 @@ module Wechat
     end
 
     def material_delete(media_id)
-      post 'material/del_material', media_id: media_id
+      post 'material/del_material', JSON.generate(media_id: media_id)
     end
 
     def custom_message_send(message)
