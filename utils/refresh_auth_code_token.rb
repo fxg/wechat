@@ -19,27 +19,36 @@ class ComponentAccessToken
 
   def refresh
     # exit unless expires?
-    # 获取component_verify_ticket
-    component_verify_ticket = redis.hget component_verify_ticket_key, "ComponentVerifyTicket"
+    tries = 0
+    begin
+      # 获取component_verify_ticket
+      component_verify_ticket = redis.hget component_verify_ticket_key, "ComponentVerifyTicket"
 
-    component_verify_ticket_params = {
-      component_appid: @component_appid,
-      component_appsecret: @component_appsecret,
-      component_verify_ticket: component_verify_ticket
-    }
+      component_verify_ticket_params = {
+        component_appid: @component_appid,
+        component_appsecret: @component_appsecret,
+        component_verify_ticket: component_verify_ticket
+      }
 
-    clnt = HTTPClient.new()
-    resp = clnt.post("#{API_BASE}component/api_component_token", JSON.generate(component_verify_ticket_params))
-    component_access_token_hash = JSON.parse(resp.body)
+      clnt = HTTPClient.new()
+      resp = clnt.post("#{API_BASE}component/api_component_token", JSON.generate(component_verify_ticket_params))
+      component_access_token_hash = JSON.parse(resp.body)
 
-    raise "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: ComponentAccessToken: component_appid: #{@component_appid}, #{component_access_token_hash}" if component_access_token_hash['errcode'].to_i > 0
+      posted_message = "ComponentAccessToken: component_appid: #{@component_appid}, data: #{component_access_token_hash}"
+      raise posted_message if component_access_token_hash['errcode'].to_i > 0 or component_access_token_hash['component_access_token'].nil? or component_access_token_hash['component_access_token'] == ""
 
-    redis.multi
-    redis.hmset component_access_token_key, "component_access_token", "#{component_access_token_hash['component_access_token']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{component_access_token_hash['expires_in']}"
-    redis.expire component_access_token_key, component_access_token_hash['expires_in']
-    redis.exec
-  rescue
-    p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
+      redis.multi
+      redis.hmset component_access_token_key, "component_access_token", "#{component_access_token_hash['component_access_token']}", "got_token_at", "#{Time.now.to_i}", "expires_in", "#{component_access_token_hash['expires_in']}"
+      redis.expire component_access_token_key, component_access_token_hash['expires_in']
+      redis.exec
+
+      p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: success: #{posted_message}"
+    rescue
+      p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: fail: #{$!}"
+      tries += 1
+      sleep 1
+      retry if tries < 3
+    end
   end
 
   private
@@ -67,27 +76,37 @@ class AuthorizerAccessToken
 
   def refresh
     # exit unless expires?
-    component_access_token = redis.hget component_access_token_key, "component_access_token"
-    authorizer_refresh_token = redis.hget authorizer_access_token_key, "authorizer_refresh_token"
+    tries = 0
+    begin
+      component_access_token = redis.hget component_access_token_key, "component_access_token"
+      authorizer_refresh_token = redis.hget authorizer_access_token_key, "authorizer_refresh_token"
 
-    authorizer_access_token_params = {
-      component_appid: component_appid,
-      authorizer_appid: authorizer_appid,
-      authorizer_refresh_token: authorizer_refresh_token
-    }
+      authorizer_access_token_params = {
+        component_appid: component_appid,
+        authorizer_appid: authorizer_appid,
+        authorizer_refresh_token: authorizer_refresh_token
+      }
 
-    clnt = HTTPClient.new()
-    resp = clnt.post("#{API_BASE}component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
-    authorizer_access_token_hash = JSON.parse(resp.body)
+      clnt = HTTPClient.new()
+      resp = clnt.post("#{API_BASE}component/api_authorizer_token?component_access_token=#{component_access_token}", JSON.generate(authorizer_access_token_params))
+      authorizer_access_token_hash = JSON.parse(resp.body)
 
-    raise "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: AuthorizerAccessToken: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, #{authorizer_access_token_hash}" if authorizer_access_token_hash['errcode'].to_i > 0
+      posted_message = "AuthorizerAccessToken: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, data: #{authorizer_access_token_hash}"
+      raise posted_message if authorizer_access_token_hash['errcode'].to_i > 0 or authorizer_access_token_hash['authorizer_access_token'].nil? or authorizer_access_token_hash['authorizer_access_token'] == ""
 
-    redis.multi
-    redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
-    redis.expire authorizer_access_token_key, authorizer_access_token_hash['expires_in']
-    redis.exec
-  rescue
-    p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
+      redis.multi
+      redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "get_token_at", "#{Time.now.to_i}"
+      redis.expire authorizer_access_token_key, authorizer_access_token_hash['expires_in']
+      # , "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}"
+      redis.exec
+
+      p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: success: #{posted_message}"
+    rescue
+      p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: fail: #{$!}"
+      tries += 1
+      sleep 1
+      retry if tries < 3
+    end
   end
 
   private
@@ -114,20 +133,29 @@ class JsapiTicket
 
   def refresh
     # exit unless expires?
-    authorizer_access_token = redis.hget authorizer_access_token_key, "authorizer_access_token"
+    tries = 0
+    begin
+      authorizer_access_token = redis.hget authorizer_access_token_key, "authorizer_access_token"
 
-    clnt = HTTPClient.new()
-    resp = clnt.get("#{API_BASE}ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
-    jsapi_ticket_key_hash = JSON.parse(resp.body)
+      clnt = HTTPClient.new()
+      resp = clnt.get("#{API_BASE}ticket/getticket?access_token=#{authorizer_access_token}&type=jsapi")
+      jsapi_ticket_key_hash = JSON.parse(resp.body)
 
-    raise "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: JsapiTicket: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid}, #{jsapi_ticket_key_hash}" if jsapi_ticket_key_hash['errcode'].to_i > 0
+      posted_message = "JsapiTicket: component_appid: #{component_appid}, authorizer_appid: #{authorizer_appid},  data: #{jsapi_ticket_key_hash}"
+      raise posted_message if jsapi_ticket_key_hash['errcode'].to_i > 0 or jsapi_ticket_key_hash['ticket'].nil? or jsapi_ticket_key_hash['ticket'] == ""
 
-    redis.multi
-    redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
-    redis.expire jsapi_ticket_key, jsapi_ticket_key_hash['expires_in']
-    redis.exec
-  rescue
-    p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: #{$!}"
+      redis.multi
+      redis.hmset jsapi_ticket_key, "ticket", "#{jsapi_ticket_key_hash['ticket']}", "oauth2_state", "#{SecureRandom.hex(16)}",  "expires_in", "#{jsapi_ticket_key_hash['expires_in']}", "errcode", "#{jsapi_ticket_key_hash['errcode']}", "errmsg", "#{jsapi_ticket_key_hash['errmsg']}", "get_token_at", "#{Time.now.to_i}"
+      redis.expire jsapi_ticket_key, jsapi_ticket_key_hash['expires_in']
+      redis.exec
+
+      p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: success: #{posted_message}"
+    rescue
+      p "#{Time.now().localtime.strftime '%Y-%m-%d %H:%M:%S'}: fail: #{$!}"
+      tries += 1
+      sleep 1
+      retry if tries < 3
+    end
   end
 
   private
