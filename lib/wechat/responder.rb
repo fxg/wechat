@@ -256,7 +256,7 @@ module Wechat
       Wechat.redis.multi
       Wechat.redis.set "wechat_authorization_info_#{component_appid}_#{authorizer_appid}", authorization_info_hash.to_json
       Wechat.redis.hmset wechat_authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token}", "expires_in", "#{authorization_info_hash['expires_in']}", "authorizer_refresh_token", "#{authorization_info_hash['authorizer_refresh_token']}", "get_token_at", "#{Time.now.to_i}"
-      Wechat.redis.expire wechat_authorizer_access_token_key, authorization_info_hash['expires_in']
+      # Wechat.redis.expire wechat_authorizer_access_token_key, authorization_info_hash['expires_in']
       Wechat.redis.exec
 
       # 获取授权公众号的ticket
