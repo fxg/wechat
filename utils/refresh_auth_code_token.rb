@@ -96,7 +96,7 @@ class AuthorizerAccessToken
 
       redis.multi
       redis.hmset authorizer_access_token_key, "authorizer_access_token", "#{authorizer_access_token_hash['authorizer_access_token']}", "expires_in", "#{authorizer_access_token_hash['expires_in']}", "get_token_at", "#{Time.now.to_i}"
-      redis.expire authorizer_access_token_key, authorizer_access_token_hash['expires_in']
+      # redis.expire authorizer_access_token_key, authorizer_access_token_hash['expires_in']
       # , "authorizer_refresh_token", "#{authorizer_access_token_hash['authorizer_refresh_token']}"
       redis.exec
 
